@@ -19,8 +19,29 @@ const DIET_TYPES = ['Vegetarian', 'Non-Vegetarian', 'Eggetarian', 'Vegan', 'Jain
 const CUISINES   = ['North Indian', 'South Indian', 'Continental', 'Mediterranean', 'Pan-Asian', 'Middle Eastern', 'Anything']
 const CONDITIONS = ['Diabetes', 'PCOS / PCOD', 'Thyroid', 'Hypertension', 'High cholesterol', 'Fatty liver', 'Gut / acidity', 'Gluten-free', 'Lactose intolerance', 'Anemia']
 const TRAININGS  = [{ v: 'none', label: 'No workouts' }, { v: 'gym', label: 'Gym' }, { v: 'cardio', label: 'Cardio' }, { v: 'sport', label: 'Sport' }, { v: 'walk', label: 'Walking' }, { v: 'yoga', label: 'Yoga' }]
-const TIMES_WAKE  = ['5:30 AM', '6:00 AM', '6:30 AM', '7:00 AM', '7:30 AM', '8:00 AM']
-const TIMES_SLEEP = ['9:30 PM', '10:00 PM', '10:30 PM', '11:00 PM', '11:30 PM', '12:00 AM']
+// 48 half-hour slots across the full day: "12:00 AM" … "11:30 PM".
+const TIME_OPTIONS: string[] = (() => {
+  const out: string[] = []
+  for (let m = 0; m < 24 * 60; m += 30) {
+    const h24 = Math.floor(m / 60)
+    const mm = m % 60 === 0 ? '00' : '30'
+    const ampm = h24 < 12 ? 'AM' : 'PM'
+    let h12 = h24 % 12; if (h12 === 0) h12 = 12
+    out.push(`${h12}:${mm} ${ampm}`)
+  }
+  return out
+})()
+const timeToMin = (s: string): number => {
+  const m = String(s).trim().match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i)
+  if (!m) return 0
+  let h = parseInt(m[1], 10) % 12
+  if (/PM/i.test(m[3])) h += 12
+  return h * 60 + parseInt(m[2], 10)
+}
+// Minutes awake (wake → sleep), wrapping past midnight for night owls.
+const awakeMinutes = (wake: string, sleep: string): number =>
+  (((timeToMin(sleep) - timeToMin(wake)) % 1440) + 1440) % 1440
+const MIN_AWAKE_MIN = 6 * 60
 
 const label: CSSProperties = { fontSize: 13, fontWeight: 700, color: '#374151', display: 'block', margin: '18px 0 8px', fontFamily: FONT }
 const inputBox: CSSProperties = { width: '100%', padding: '11px 14px', border: '1.5px solid #e5e7eb', borderRadius: 12, fontSize: 15, color: '#111827', background: '#f9fafb', outline: 'none', fontFamily: FONT, boxSizing: 'border-box' }
@@ -48,7 +69,8 @@ export default function GenerateDietWizard({ guardianName, profile, onClose }: {
   const [activity, setActivity] = useState(profile?.activity && ACTIVITY.some(a => a.v === profile.activity) ? profile.activity : 'light')
 
   // Step 1 — routine & health
-  const [meals, setMeals]       = useState(5)
+  const [mealsChoice, setMealsChoice] = useState<string>('5') // '3'|'4'|'5'|'6'|'auto'|'other'
+  const [mealsOther, setMealsOther]   = useState('')
   const [wake, setWake]         = useState('6:30 AM')
   const [sleep, setSleep]       = useState('10:30 PM')
   const [conditions, setConds]  = useState<string[]>([])
@@ -67,6 +89,14 @@ export default function GenerateDietWizard({ guardianName, profile, onClose }: {
 
   const toggle = (arr: string[], set: (a: string[]) => void, v: string) => set(arr.includes(v) ? arr.filter(x => x !== v) : [...arr, v])
 
+  // null = let the guardian decide; otherwise a clamped 2–8 count.
+  const resolveMeals = (): number | null => {
+    if (mealsChoice === 'auto') return null
+    if (mealsChoice === 'other') { const n = parseInt(mealsOther, 10); return isNaN(n) ? null : Math.max(2, Math.min(8, n)) }
+    const n = parseInt(mealsChoice, 10); return isNaN(n) ? null : n
+  }
+  const mealsDisplay = (() => { const r = resolveMeals(); return r == null ? 'the right number of' : String(r) })()
+
   const validate0 = () => {
     const a = parseInt(String(age)), h = parseFloat(String(height)), w = parseFloat(String(weight))
     if (!(a >= 10 && a <= 100)) return 'Enter a valid age (10–100).'
@@ -77,6 +107,10 @@ export default function GenerateDietWizard({ guardianName, profile, onClose }: {
 
   const next = () => {
     if (step === 0) { const e = validate0(); if (e) { setError(e); return } }
+    if (step === 1 && awakeMinutes(wake, sleep) < MIN_AWAKE_MIN) {
+      setError(`Please keep at least 6 hours between your wake-up and sleep times so ${guardianName} can space your meals healthily.`)
+      return
+    }
     setError('')
     if (step < 2) { setStep(step + 1); return }
     generate()
@@ -104,7 +138,7 @@ export default function GenerateDietWizard({ guardianName, profile, onClose }: {
         workoutTimes: Array(7).fill(training === 'none' ? 'none' : trainTime),
         activityTypes: Array(7).fill(training),
         liquidTypes: Array(7).fill('veg'),
-        mealsPerDay: meals,
+        mealsPerDay: resolveMeals(),
         wakeTime: wake,
         sleepTime: sleep,
         customPrompt: notes.trim() || null,
@@ -186,17 +220,33 @@ export default function GenerateDietWizard({ guardianName, profile, onClose }: {
           {step === 1 && (
             <>
               <label style={label}>How many meals per day?</label>
-              <div style={{ display: 'flex', gap: 8 }}>
-                {[3, 4, 5, 6].map(n => <div key={n} style={{ flex: 1 }}><Chip active={meals === n} onClick={() => setMeals(n)}><span style={{ display: 'block', textAlign: 'center' }}>{n} meals</span></Chip></div>)}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+                {['3', '4', '5', '6'].map(n => <Chip key={n} active={mealsChoice === n} onClick={() => setMealsChoice(n)}>{n} meals</Chip>)}
+                <Chip active={mealsChoice === 'auto'} onClick={() => setMealsChoice('auto')}>Let {guardianName} decide</Chip>
+                <Chip active={mealsChoice === 'other'} onClick={() => setMealsChoice('other')}>Other</Chip>
+                {mealsChoice === 'other' && (
+                  <input
+                    type="number" min={2} max={8} value={mealsOther}
+                    onChange={e => setMealsOther(e.target.value.replace(/[^0-9]/g, '').slice(0, 1))}
+                    placeholder="e.g. 7"
+                    style={{ ...inputBox, width: 90, padding: '8px 12px' }}
+                  />
+                )}
               </div>
+              {mealsChoice === 'auto' && <p style={{ fontSize: 12.5, color: '#6b7280', margin: '8px 0 0', fontFamily: FONT }}>{guardianName} will choose the ideal number of meals from your goal, routine and timings.</p>}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div><label style={label}>⏰ Wake-up time</label>
-                  <select value={wake} onChange={e => setWake(e.target.value)} style={{ ...inputBox, cursor: 'pointer' }}>{TIMES_WAKE.map(t => <option key={t} value={t}>{t}</option>)}</select>
+                  <select value={wake} onChange={e => setWake(e.target.value)} style={{ ...inputBox, cursor: 'pointer' }}>{TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}</select>
                 </div>
                 <div><label style={label}>🌙 Sleep time</label>
-                  <select value={sleep} onChange={e => setSleep(e.target.value)} style={{ ...inputBox, cursor: 'pointer' }}>{TIMES_SLEEP.map(t => <option key={t} value={t}>{t}</option>)}</select>
+                  <select value={sleep} onChange={e => setSleep(e.target.value)} style={{ ...inputBox, cursor: 'pointer' }}>{TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}</select>
                 </div>
               </div>
+              {awakeMinutes(wake, sleep) < MIN_AWAKE_MIN && (
+                <p style={{ fontSize: 12.5, color: '#d97706', margin: '8px 0 0', fontWeight: 600, fontFamily: FONT }}>
+                  ⚠️ Please keep at least 6 hours between wake-up and sleep so {guardianName} can space your meals healthily.
+                </p>
+              )}
               <label style={label}>Health conditions <span style={{ color: '#9ca3af', fontWeight: 500 }}>· optional</span></label>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 {CONDITIONS.map(c => <Chip key={c} active={conditions.includes(c)} onClick={() => toggle(conditions, setConds, c)}>{conditions.includes(c) ? '✓ ' : ''}{c}</Chip>)}
@@ -245,7 +295,7 @@ export default function GenerateDietWizard({ guardianName, profile, onClose }: {
               <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="e.g. high protein, no dinner carbs, love paneer, intermittent fasting…" style={{ ...inputBox, minHeight: 70, resize: 'vertical' }} />
               <div style={{ background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: 12, padding: '12px 14px', marginTop: 16, display: 'flex', gap: 10 }}>
                 <span style={{ fontSize: 18 }}>✨</span>
-                <p style={{ fontSize: 13, color: '#92400e', lineHeight: 1.6, margin: 0 }}>{guardianName} will size your calories &amp; macros, then build {meals} meals between {wake} and {sleep} — respecting your diet, cuisine, training and conditions.</p>
+                <p style={{ fontSize: 13, color: '#92400e', lineHeight: 1.6, margin: 0 }}>{guardianName} will size your calories &amp; macros, then build {mealsDisplay} meals between {wake} and {sleep} — respecting your diet, cuisine, training and conditions.</p>
               </div>
             </>
           )}
@@ -255,7 +305,7 @@ export default function GenerateDietWizard({ guardianName, profile, onClose }: {
             <div style={{ textAlign: 'center', padding: '48px 16px' }}>
               <div style={{ fontSize: 52, marginBottom: 16 }}>🤖</div>
               <div style={{ fontFamily: FONT_SYNE, fontSize: 20, fontWeight: 800, color: '#052e16', marginBottom: 8 }}>{guardianName} is building your plan…</div>
-              <p style={{ fontSize: 14, color: '#6b7280', marginBottom: 24 }}>Sizing calories &amp; macros and crafting {meals} meals for your day. This takes ~20–30 seconds.</p>
+              <p style={{ fontSize: 14, color: '#6b7280', marginBottom: 24 }}>Sizing calories &amp; macros and crafting {mealsDisplay} meals for your day. This takes ~20–30 seconds.</p>
               <div style={{ height: 6, background: '#f3f4f6', borderRadius: 4, overflow: 'hidden' }}><div style={{ height: '100%', width: '75%', background: 'linear-gradient(to right,#7c3aed,#a855f7)', borderRadius: 4 }} /></div>
             </div>
           )}

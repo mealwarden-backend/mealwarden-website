@@ -104,7 +104,7 @@ export default function Nutrition() {
               No Nutrition Data Yet
             </div>
             <p style={{ fontSize: 15, color: '#6b7280', lineHeight: 1.8, maxWidth: 440, margin: '0 auto 32px', fontFamily: FONT }}>
-              Your nutrition analytics will appear here once you upload your diet chart and start logging your meals. Upload your chart or generate one with AI to get started!
+              Your nutrition analytics will appear here once you upload your diet chart and start logging your meals. Upload your chart or let your guardian build one to get started!
             </p>
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
               <button

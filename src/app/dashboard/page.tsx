@@ -601,11 +601,12 @@ function AIDietGeneratorModal({
 
 // ─── Diet Chart Upload Modal ──────────────────────────────
 function DietChartUploadModal({
-  onClose, onUpload, onAIGenerate,
+  onClose, onUpload, onAIGenerate, guardianName = 'Meenu',
 }: {
   onClose: () => void
   onUpload: (chart: DietChart) => void
   onAIGenerate: () => void
+  guardianName?: string
 }) {
   return (
     <>
@@ -625,11 +626,11 @@ function DietChartUploadModal({
             <span style={{ fontSize: 22, flexShrink: 0 }}>📲</span>
             <div>
               <div style={{ fontSize: 14, fontWeight: 700, color: '#052e16', marginBottom: 4 }}>Upload a chart in the app</div>
-              <p style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.6, margin: 0, fontFamily: FONT }}>Snap or upload your dietitian&apos;s chart (photo, PDF or handwriting) in the MealWarden app — your guardian reads it and it syncs here automatically. No plan yet? Generate one with AI right here.</p>
+              <p style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.6, margin: 0, fontFamily: FONT }}>Snap or upload your dietitian&apos;s chart (photo, PDF or handwriting) in the MealWarden app — your guardian reads it and it syncs here automatically. No plan yet? Generate one with {guardianName} right here.</p>
             </div>
           </div>
-          <button onClick={onAIGenerate} style={{ width: '100%', padding: '13px', background: 'linear-gradient(135deg,#7c3aed,#a855f7)', color: '#fff', border: 'none', borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: FONT, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 8px 24px rgba(168,85,247,0.3)' }}>✨ Generate Diet Chart with AI</button>
-          <p style={{ fontSize: 11, color: '#9ca3af', textAlign: 'center', marginTop: 8, fontFamily: FONT }}>No dietitian needed · AI creates a personalized plan for you</p>
+          <button onClick={onAIGenerate} style={{ width: '100%', padding: '13px', background: 'linear-gradient(135deg,#7c3aed,#a855f7)', color: '#fff', border: 'none', borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: FONT, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 8px 24px rgba(168,85,247,0.3)' }}>✨ Generate Diet Chart with {guardianName}</button>
+          <p style={{ fontSize: 11, color: '#9ca3af', textAlign: 'center', marginTop: 8, fontFamily: FONT }}>No dietitian needed · {guardianName} creates a personalized plan for you</p>
         </div>
       </div>
     </>
@@ -757,7 +758,7 @@ function AnalyticsModal({
               <div style={{ fontSize: 56, marginBottom: 16 }}>📊</div>
               <div style={{ fontFamily: FONT_SYNE, fontSize: 20, fontWeight: 700, color: '#052e16', marginBottom: 10 }}>No Data Yet</div>
               <p style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.7, marginBottom: 24, fontFamily: FONT }}>
-                Upload your diet chart or generate one with AI, then start logging your meals. Your real analytics will appear here.
+                Upload your diet chart or let your guardian build one, then start logging your meals. Your real analytics will appear here.
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, maxWidth: 360, margin: '0 auto' }}>
                 {[
@@ -1175,10 +1176,10 @@ export default function Dashboard() {
               <div style={{ textAlign: 'center', padding: '40px 20px' }}>
                 <div style={{ fontSize: 48, marginBottom: 12 }}>📋</div>
                 <div style={{ fontFamily: FONT_SYNE, fontSize: 18, fontWeight: 700, color: '#052e16', marginBottom: 8 }}>No Diet Chart Yet</div>
-                <p style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.7, marginBottom: 24, fontFamily: FONT }}>Upload your dietitian's chart or let our AI create a personalized plan just for you!</p>
+                <p style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.7, marginBottom: 24, fontFamily: FONT }}>Upload your dietitian's chart or let {guardianName} create a personalized plan just for you!</p>
                 <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
                   <button onClick={() => setShowUpload(true)} style={{ padding: '12px 20px', background: 'linear-gradient(135deg,#16a34a,#22c55e)', color: '#fff', border: 'none', borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: FONT }}>📸 Scan Existing Chart</button>
-                  <button onClick={() => setShowAIGenerator(true)} style={{ padding: '12px 20px', background: 'linear-gradient(135deg,#7c3aed,#a855f7)', color: '#fff', border: 'none', borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: FONT }}>✨ Generate with AI</button>
+                  <button onClick={() => setShowAIGenerator(true)} style={{ padding: '12px 20px', background: 'linear-gradient(135deg,#7c3aed,#a855f7)', color: '#fff', border: 'none', borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: FONT }}>✨ Generate with {guardianName}</button>
                 </div>
               </div>
             ) : (
@@ -1230,7 +1231,7 @@ export default function Dashboard() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {[
                   { icon: '📸', label: 'Scan Diet Chart',    color: '#fff7ed', ac: '#f97316', onClick: () => setShowUpload(true) },
-                  { icon: '✨', label: 'Generate with AI',   color: '#f5f3ff', ac: '#7c3aed', onClick: () => setShowAIGenerator(true) },
+                  { icon: '✨', label: `Generate with ${guardianName}`,   color: '#f5f3ff', ac: '#7c3aed', onClick: () => setShowAIGenerator(true) },
                   { icon: '🛒', label: 'View Grocery List',  color: '#f0fdf4', ac: '#16a34a', onClick: () => setShowGrocery(true) },
                   { icon: '📊', label: 'View Analytics',     color: '#eff6ff', ac: '#3b82f6', onClick: () => setShowAnalytics(true) },
                   { icon: '💎', label: 'Upgrade to Premium', color: '#fdf4ff', ac: '#a855f7', onClick: () => router.push('/upgrade') },
@@ -1269,7 +1270,7 @@ export default function Dashboard() {
 
       {/* All Modals */}
       {showEditProfile && <EditProfileModal profile={profile} onClose={() => setShowEditProfile(false)} onSave={handleSaveProfile} onReset={handleResetProfile} />}
-      {showUpload && <DietChartUploadModal onClose={() => setShowUpload(false)} onUpload={handleDietChart} onAIGenerate={() => { setShowUpload(false); setShowAIGenerator(true) }} />}
+      {showUpload && <DietChartUploadModal guardianName={guardianName} onClose={() => setShowUpload(false)} onUpload={handleDietChart} onAIGenerate={() => { setShowUpload(false); setShowAIGenerator(true) }} />}
       {showAIGenerator && <GenerateDietWizard guardianName={guardianName} profile={profile} onClose={() => setShowAIGenerator(false)} />}
       {showGrocery && <GroceryListModal dietChart={dietChart} onClose={() => setShowGrocery(false)} onUpload={() => { setShowGrocery(false); setShowUpload(true) }} />}
       {showAnalytics && (
