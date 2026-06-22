@@ -124,6 +124,14 @@ export const api = {
   // Analytics
   getWeeklyAnalytics:  () => cget('/api/analytics/weekly'),
   getAnalyticsSummary: (period = 'week') => cget(`/api/analytics/summary?period=${period}`),
+  getStreak:           () => cget('/api/analytics/streak'),
+
+  // Streak — MealWarden Mates (friends) + leaderboard
+  friendsLeaderboard:  () => cget('/api/friends/leaderboard'),
+  friendRequests:      () => cget('/api/friends/requests'),
+  searchUsers:         (q: string) => req(`/api/friends/search?q=${encodeURIComponent(q)}`).then(unwrap),
+  sendFriendRequest:   (userId: string) => mutate('/api/friends/request', { method: 'POST', body: JSON.stringify({ userId }) }),
+  respondFriend:       (id: string, action: 'accept' | 'reject') => mutate('/api/friends/respond', { method: 'POST', body: JSON.stringify({ id, action }) }),
 
   // Assistant — never cached
   askAssistant: (question: string, guardian?: string, history?: any[], persona?: string) =>

@@ -16,7 +16,7 @@ export type Plan = {
 export const PLANS: Plan[] = [
   {
     key: 'free', name: 'Free', monthly: 0, annual: 0, tagline: 'Get started',
-    features: ['1 active diet plan', 'Basic meal reminders', 'Water & weight tracking', 'Up to 3 meals a day'],
+    features: ['1 active diet plan', 'Basic meal reminders', 'Water & weight tracking', 'Daily streaks & MealWarden Mates', 'Up to 3 meals a day'],
   },
   {
     key: 'silver', name: 'Silver', monthly: 149, annual: 1199, tagline: 'For consistency',

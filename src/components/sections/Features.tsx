@@ -57,6 +57,15 @@ const features = [
     accent: '#0ea5e9',
     tag: 'AI Chef',
   },
+  {
+    icon: '🔥',
+    title: 'Streaks & MealWarden Mates',
+    desc: 'Build a daily logging streak, earn badges, and add MealWarden Mates to climb a friends leaderboard together. Consistency, made social.',
+    color: '#fffbeb',
+    border: '#fde68a',
+    accent: '#E6A700',
+    tag: 'Community',
+  },
 ]
 
 export default function Features() {
