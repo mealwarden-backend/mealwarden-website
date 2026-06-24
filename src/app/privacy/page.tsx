@@ -34,6 +34,7 @@ export default function PrivacyPolicy() {
         <LI><strong>Content you provide:</strong> diet plans you upload (photos, PDFs or documents), meals you log, water intake, prep tasks, grocery lists, and messages you send to the in-app assistant.</LI>
         <LI><strong>Device &amp; usage information:</strong> device type, app version, a push-notification token, and basic technical logs (including IP address) needed to operate and secure the Service.</LI>
         <LI><strong>Purchase information:</strong> your subscription status and entitlements. Payments are processed by Apple or Google; we do not receive or store your card details.</LI>
+        <LI><strong>Social connections (MealWarden Mates):</strong> if you choose to connect with other users, we store those connections and pending requests. Your name, username, profile photo and streak become visible to the Mates you connect with.</LI>
       </UL>
 
       <H2>3. How we use your information</H2>
@@ -61,6 +62,15 @@ export default function PrivacyPolicy() {
         <LI>An SMS provider for delivering one-time verification codes, where applicable.</LI>
       </UL>
       <P>We do not sell your personal data or use it for third-party advertising.</P>
+
+      <P>
+        <strong>MealWarden Mates (optional social features):</strong> Mates is opt-in. When you add Mates,
+        your name, username, profile photo and streak are shared with the users you connect with on a
+        shared leaderboard. Other users can find you by your username, and by your email or phone number
+        unless you turn that off in Settings. You can remove a Mate at any time, which stops you both
+        appearing on each other&apos;s leaderboard. We do not share your health data, meals or plans with
+        other users.
+      </P>
 
       <H2>5. Legal basis &amp; consent</H2>
       <P>
