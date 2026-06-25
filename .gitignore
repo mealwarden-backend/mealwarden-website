@@ -42,3 +42,9 @@ next-env.d.ts
 
 users.json
 src/app/download/MealWarden.apk
+
+# AI session notes — internal architecture docs must never ship
+CLAUDE_CONTEXT.md
+*.claude_context*
+.claude/
+*.ai_notes.md
