@@ -11,10 +11,22 @@ const GOLD  = '#E6A700'
 const GREEN = '#16a34a'
 const DARK  = '#052e16'
 
-type Member  = { id: string; name: string; username?: string; streak: number; isMe?: boolean; rank: number }
-type ReqItem = { id: string; user: { id: string; name: string; username?: string } }
-type Badge   = { day: number; key: string; name: string; coins: number; unlocked: boolean; daysLeft: number }
-type DayCell = { date: string; adherencePct: number; logged: number; planned: number }
+type Member    = { id: string; name: string; username?: string; streak: number; isMe?: boolean; rank: number }
+type ReqItem   = { id: string; user: { id: string; name: string; username?: string } }
+type Badge     = { day: number; key: string; name: string; coins: number; unlocked: boolean; daysLeft: number }
+type DayCell   = { date: string; adherencePct: number; logged: number; planned: number }
+type LeagueMember = { id: string; name: string; username?: string; avatarUrl?: string; score: number; rank: number; meals: number; waterDays: number; isMe?: boolean }
+
+const TIERS = [
+  { min: 0,   name: 'Rookie',     emoji: '🌱' },
+  { min: 7,   name: 'Consistent', emoji: '🔥' },
+  { min: 15,  name: 'Guardian',   emoji: '🛡️' },
+  { min: 31,  name: 'Champion',   emoji: '⚔️' },
+  { min: 91,  name: 'Elite',      emoji: '👑' },
+  { min: 181, name: 'Legend',     emoji: '🏆' },
+]
+const tierFor = (streak: number) => [...TIERS].reverse().find(t => streak >= t.min) || TIERS[0]
+const MEDAL = ['#E6B422', '#B8C0CC', '#CD8B5B']
 
 function AdherenceColor(pct: number) {
   if (pct >= 80) return '#16a34a'
@@ -42,6 +54,11 @@ export default function StreakPage() {
   // 7-day grid
   const [weekGrid, setWeekGrid] = useState<DayCell[]>([])
 
+  // Weekly league
+  const [leagueBoard,     setLeagueBoard]     = useState<LeagueMember[]>([])
+  const [leagueMe,        setLeagueMe]        = useState<any>(null)
+  const [leagueResetDays, setLeagueResetDays] = useState(0)
+
   // Active plans (for delete action)
   const [plans,       setPlans]       = useState<any[]>([])
   const [deletingId,  setDeletingId]  = useState<string | null>(null)
@@ -54,13 +71,14 @@ export default function StreakPage() {
   const [statusMap, setStatusMap] = useState<Record<string, string>>({})
 
   const reload = useCallback(async () => {
-    const [st, lb, rq, cs, summary, plansRes] = await Promise.all([
+    const [st, lb, rq, cs, summary, plansRes, wl] = await Promise.all([
       api.getStreak().catch(() => null),
       api.friendsLeaderboard().catch(() => null),
       api.friendRequests().catch(() => null),
       api.getCoinStatus().catch(() => null),
       api.getAnalyticsSummary('week').catch(() => null),
       api.getDietPlans().catch(() => null),
+      api.getWeeklyLeague().catch(() => null),
     ])
     setStreak(st?.streak ?? null)
     setBoard(lb?.leaderboard || [])
@@ -87,6 +105,11 @@ export default function StreakPage() {
     setWeekGrid(grid)
 
     setPlans((plansRes?.plans || plansRes || []).filter((p: any) => p.isActive))
+
+    const wld = wl?.leaderboard || wl?.data?.leaderboard || []
+    setLeagueBoard(wld)
+    setLeagueMe(wl?.me || wl?.data?.me || null)
+    setLeagueResetDays(wl?.resetsInDays ?? wl?.data?.resetsInDays ?? 0)
   }, [])
 
   useEffect(() => {
@@ -252,6 +275,79 @@ export default function StreakPage() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* Weekly League */}
+        <div>
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontFamily: FONT_SYNE, fontSize: 20, fontWeight: 800, color: DARK }}>🏆 Weekly League</div>
+            <div style={{ fontSize: 13, color: '#6b7280', marginTop: 3 }}>Earn points every meal · resets Monday · climb the ranks</div>
+          </div>
+
+          {/* Tier hero */}
+          <div style={{ background: `linear-gradient(135deg,${DARK},${GREEN})`, borderRadius: 18, padding: '20px 24px', marginBottom: 14, color: '#fff' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)', borderRadius: 100, padding: '6px 14px', marginBottom: 16 }}>
+              <span style={{ fontSize: 15 }}>{tierFor(days).emoji}</span>
+              <span style={{ fontWeight: 900, fontSize: 13 }}>{tierFor(days).name} League</span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 0 }}>
+              {[
+                { label: 'Your Score', value: leagueMe ? leagueMe.score : 0 },
+                { label: `Rank`, value: leagueMe ? `#${leagueMe.rank}` : '—' },
+                { label: 'Resets In', value: `${leagueResetDays}d` },
+              ].map((s, i) => (
+                <div key={s.label} style={{ textAlign: 'center', borderLeft: i ? '1px solid rgba(255,255,255,0.2)' : 'none' }}>
+                  <div style={{ fontFamily: FONT_SYNE, fontSize: 26, fontWeight: 900 }}>{s.value}</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.75)', marginTop: 3 }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={card}>
+            {/* Tier ladder */}
+            <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+              {TIERS.map(t => {
+                const active = tierFor(days).name === t.name
+                return (
+                  <div key={t.name} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 20, background: active ? '#052e16' : '#f3f4f6', border: active ? 'none' : '1px solid #e5e7eb' }}>
+                    <span style={{ fontSize: 13 }}>{t.emoji}</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: active ? '#fff' : '#6b7280' }}>{t.name}</span>
+                    <span style={{ fontSize: 10, color: active ? 'rgba(255,255,255,0.6)' : '#d1d5db' }}>{t.min}+d</span>
+                  </div>
+                )
+              })}
+            </div>
+
+            {leagueBoard.length <= 1 ? (
+              <div style={{ textAlign: 'center', padding: '24px 12px', borderTop: '1px solid #f1f5f9' }}>
+                <div style={{ fontSize: 32, marginBottom: 10 }}>🏁</div>
+                <div style={{ fontWeight: 800, color: DARK, marginBottom: 6 }}>Race your mates this week</div>
+                <div style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.7 }}>Add MealWarden Mates below and your scores appear here. Each meal +10 pts, water goal +5 pts. Resets every Monday.</div>
+              </div>
+            ) : leagueBoard.map((m, i) => (
+              <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 8px', borderTop: i ? '1px solid #f1f5f9' : 'none', background: m.isMe ? '#f0fdf4' : 'transparent', borderRadius: m.isMe ? 10 : 0 }}>
+                <div style={{ width: 26, height: 26, borderRadius: 13, background: m.rank <= 3 ? MEDAL[m.rank - 1] : '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 12, color: m.rank <= 3 ? '#1A130A' : '#6b7280' }}>
+                  {m.rank}
+                </div>
+                <div style={{ width: 38, height: 38, borderRadius: 20, background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: GREEN, fontSize: 15 }}>
+                  {(m.name || '?').charAt(0).toUpperCase()}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700, color: m.isMe ? GREEN : '#111827', fontSize: 14 }}>{m.isMe ? `${m.name} (You)` : m.name}</div>
+                  <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>{m.meals} meals · {m.waterDays} water days</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontFamily: FONT_SYNE, fontSize: 17, fontWeight: 900, color: m.isMe ? GREEN : '#111827' }}>{m.score}</div>
+                  <div style={{ fontSize: 10, color: '#9ca3af' }}>pts</div>
+                </div>
+              </div>
+            ))}
+
+            <div style={{ marginTop: 14, background: '#f9fafb', borderRadius: 10, padding: '10px 14px', border: '1px solid #e5e7eb', textAlign: 'center' }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#6b7280' }}>Earn points · meal logged <strong style={{ color: GOLD }}>+10</strong> &nbsp; water goal <strong style={{ color: GOLD }}>+5</strong></span>
+            </div>
           </div>
         </div>
 

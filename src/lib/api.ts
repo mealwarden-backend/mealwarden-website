@@ -196,6 +196,9 @@ export const api = {
   // Coins + badges
   getCoinStatus: () => cget('/api/coins/status'),
 
+  // Leagues — weekly points competition
+  getWeeklyLeague: () => cget('/api/leagues/weekly'),
+
   // Streak — MealWarden Mates (friends) + leaderboard
   friendsLeaderboard:  () => cget('/api/friends/leaderboard'),
   friendRequests:      () => cget('/api/friends/requests'),

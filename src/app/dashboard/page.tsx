@@ -972,6 +972,7 @@ export default function Dashboard() {
   const [showAIGenerator, setShowAIGenerator] = useState(false)
   const [sub,   setSub]   = useState<any>(null)
   const [water, setWater] = useState(0)
+  const [streakDays, setStreakDays] = useState<number | null>(null)
   const [guardianName, setGuardianName] = useState('Meenu')
   const WATER_GOAL = 8
 
@@ -1025,10 +1026,11 @@ export default function Dashboard() {
     let active = true
     ;(async () => {
       try {
-        const [s, w] = await Promise.all([api.getSubscription().catch(() => null), api.getWater().catch(() => null)])
+        const [s, w, st] = await Promise.all([api.getSubscription().catch(() => null), api.getWater().catch(() => null), api.getStreak().catch(() => null)])
         if (!active) return
         if (s) setSub(s)
         if (w) setWater(Number(w.glasses ?? w.count ?? 0))
+        if (st != null) setStreakDays(st.streak ?? st ?? 0)
       } catch {}
     })()
     return () => { active = false }
@@ -1198,7 +1200,7 @@ export default function Dashboard() {
         {/* Stats */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16, marginBottom: 28 }}>
           {[
-            { icon: '🔥', label: 'Current Streak', value: '1 day',                                                     color: '#fff7ed', ac: '#f97316' },
+            { icon: '🔥', label: 'Current Streak', value: streakDays === null ? '–' : `${streakDays} day${streakDays !== 1 ? 's' : ''}`, color: '#fff7ed', ac: '#f97316' },
             { icon: '🍽️', label: 'Meals Today',     value: meals.length ? `${doneMeals.length}/${meals.length}` : '–', color: '#f0fdf4', ac: '#16a34a' },
             { icon: '⚡', label: 'Calories Done',   value: meals.length ? `${doneKcal} kcal` : '–',                    color: '#eff6ff', ac: '#3b82f6' },
             { icon: '💪', label: 'Protein Done',    value: meals.length ? `${doneProt}g` : '–',                         color: '#fdf4ff', ac: '#a855f7' },
