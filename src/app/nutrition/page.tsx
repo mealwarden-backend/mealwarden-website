@@ -2,19 +2,24 @@
 
 import { useAuth } from '@/context/AuthContext'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { api } from '@/lib/api'
 import RecipeModal from '@/components/RecipeModal'
 
 const FONT      = 'var(--font-jakarta), Plus Jakarta Sans, sans-serif'
 const FONT_SYNE = 'var(--font-syne), Syne, sans-serif'
+const GREEN     = '#16a34a'
+const DARK      = '#052e16'
 
 interface Meal {
   id?: string
   time: string
   name: string
+  mealType: string
   kcal: number
   protein: number
+  carbsG: number
+  fatG: number
   done: boolean
 }
 
@@ -24,9 +29,27 @@ interface DietChart {
   meals: Meal[]
 }
 
-interface DayLog {
-  date: string
-  meals: Meal[]
+const SECTION_LABELS: Record<string, { label: string; emoji: string }> = {
+  other:         { label: 'Early Morning',   emoji: '🌅' },
+  breakfast:     { label: 'Breakfast',       emoji: '🍳' },
+  morning_snack: { label: 'Mid-Morning',     emoji: '🍎' },
+  lunch:         { label: 'Lunch',           emoji: '🍛' },
+  pre_workout:   { label: 'Pre-Workout',     emoji: '⚡' },
+  post_workout:  { label: 'Post-Workout',    emoji: '💪' },
+  evening_snack: { label: 'Evening Snack',   emoji: '🍵' },
+  dinner:        { label: 'Dinner',          emoji: '🍽️' },
+  before_bed:    { label: 'Before Bed',      emoji: '🌙' },
+}
+const SECTION_ORDER = ['other','breakfast','morning_snack','lunch','pre_workout','post_workout','evening_snack','dinner','before_bed']
+
+function getSec(m: Meal) {
+  if (m.mealType && m.mealType !== 'other') return m.mealType
+  const [h] = m.time.split(':').map(Number)
+  if (h >= 20 || h <= 4) return 'before_bed'
+  if (h <= 9)  return 'other'
+  if (h <= 11) return 'morning_snack'
+  if (h <= 14) return 'lunch'
+  return 'evening_snack'
 }
 
 export default function Nutrition() {
@@ -38,50 +61,130 @@ export default function Nutrition() {
   const [loaded,     setLoaded]     = useState(false)
   const [recipeMeal, setRecipeMeal] = useState<{ id: string; name: string } | null>(null)
 
+  // Edit modal state
+  const [editMeal,   setEditMeal]   = useState<Meal | null>(null)
+  const [editForm,   setEditForm]   = useState({ name: '', time: '', kcal: '', protein: '', carbs: '', fat: '' })
+  const [editSaving, setEditSaving] = useState(false)
+  const [estimating, setEstimating] = useState(false)
+
+  // Macro detail overlay
+  const [macroMeal, setMacroMeal] = useState<Meal | null>(null)
+
+  // Logging state
+  const [toggling, setToggling] = useState<string | null>(null)
+
+  const loadData = useCallback(async () => {
+    if (!user) return
+    try {
+      const [md, ld] = await Promise.all([
+        api.getTodaysMeals(),
+        api.getTodaysLogs().catch(() => ({ logs: [] })),
+      ])
+      const loggedIds = new Set<string>(((ld?.logs) || []).map((l: any) => l.mealId).filter(Boolean))
+      const rawMeals: any[] = md?.meals || []
+      const meals: Meal[] = rawMeals.map((m: any) => ({
+        id: m.id,
+        time: m.timeHHMM,
+        name: m.mealName,
+        mealType: m.mealType || 'other',
+        kcal: Math.round((m.plannedCalories ?? m.calories) || 0),
+        protein: Math.round(m.proteinG || 0),
+        carbsG: Math.round(m.carbsG || 0),
+        fatG: Math.round(m.fatG || 0),
+        done: loggedIds.has(m.id),
+      }))
+      const hasPlan = md?.hasPlan ?? meals.length > 0
+      if (hasPlan && meals.length > 0) {
+        setDietChart({
+          fileName: md?.dayName ? `Your plan · ${md.dayName}` : 'Your active plan',
+          uploadedAt: new Date().toISOString(),
+          meals,
+        })
+        setTodayMeals(meals)
+      }
+    } catch {}
+  }, [user])
+
   useEffect(() => {
     if (!user) { router.push('/'); return }
     let active = true
-    ;(async () => {
-      try {
-        const [md, ld] = await Promise.all([
-          api.getTodaysMeals(),
-          api.getTodaysLogs().catch(() => ({ logs: [] })),
-        ])
-        if (!active) return
-        const loggedIds = new Set<string>(((ld?.logs) || []).map((l: any) => l.mealId).filter(Boolean))
-        const meals: Meal[] = ((md?.meals) || []).map((m: any) => ({
-          id: m.id,
-          time: m.timeHHMM,
-          name: m.mealName,
-          kcal: Math.round((m.plannedCalories ?? m.calories) || 0),
-          protein: Math.round(m.proteinG || 0),
-          done: loggedIds.has(m.id),
-        }))
-        const hasPlan = (md?.hasPlan ?? meals.length > 0)
-        if (hasPlan && meals.length > 0) {
-          setDietChart({
-            fileName: md?.dayName ? `Your plan · ${md.dayName}` : 'Your active plan',
-            uploadedAt: new Date().toISOString(),
-            meals,
-          })
-          setTodayMeals(meals)
-        }
-      } catch {} finally { if (active) setLoaded(true) }
-    })()
+    loadData().finally(() => { if (active) setLoaded(true) })
     return () => { active = false }
   }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  const toggleMeal = useCallback(async (meal: Meal) => {
+    if (!meal.id || toggling) return
+    setToggling(meal.id)
+    // Optimistic update
+    setTodayMeals(prev => prev.map(m => m.id === meal.id ? { ...m, done: !m.done } : m))
+    try {
+      const payload: any = { mealId: meal.id, mealName: meal.name, mealType: meal.mealType }
+      if (meal.kcal)    payload.calories = meal.kcal
+      if (meal.protein) payload.proteinG = meal.protein
+      if (meal.carbsG)  payload.carbsG   = meal.carbsG
+      if (meal.fatG)    payload.fatG     = meal.fatG
+      await api.toggleLog(payload)
+    } catch {
+      // Rollback on error
+      setTodayMeals(prev => prev.map(m => m.id === meal.id ? { ...m, done: !m.done } : m))
+    } finally { setToggling(null) }
+  }, [toggling])
+
+  const openEdit = (meal: Meal) => {
+    setEditMeal(meal)
+    setEditForm({ name: meal.name, time: meal.time, kcal: meal.kcal ? String(meal.kcal) : '', protein: meal.protein ? String(meal.protein) : '', carbs: meal.carbsG ? String(meal.carbsG) : '', fat: meal.fatG ? String(meal.fatG) : '' })
+  }
+
+  const estimateMacros = async () => {
+    if (!editForm.name.trim() || estimating) return
+    setEstimating(true)
+    try {
+      const res = await (api as any).estimateMeal?.(editForm.name.trim())
+      const d = res?.data || {}
+      setEditForm(f => ({ ...f, kcal: d.calories != null ? String(d.calories) : f.kcal, protein: d.proteinG != null ? String(d.proteinG) : f.protein, carbs: d.carbsG != null ? String(d.carbsG) : f.carbs, fat: d.fatG != null ? String(d.fatG) : f.fat }))
+    } catch {} finally { setEstimating(false) }
+  }
+
+  const saveEdit = async () => {
+    if (!editMeal?.id || editSaving) return
+    setEditSaving(true)
+    try {
+      await api.updateMeal(editMeal.id, {
+        mealName: editForm.name.trim() || editMeal.name,
+        timeHHMM: editForm.time.trim() || editMeal.time,
+        calories: parseFloat(editForm.kcal) || null,
+        proteinG: parseFloat(editForm.protein) || null,
+        carbsG:   parseFloat(editForm.carbs) || null,
+        fatG:     parseFloat(editForm.fat) || null,
+      })
+      await loadData()
+      setEditMeal(null)
+    } catch {} finally { setEditSaving(false) }
+  }
+
   if (!user || !loaded) return null
 
-  // ── Compute real stats from today's meals ──
-  const doneMeals  = todayMeals.filter(m => m.done)
-  const totalKcal  = todayMeals.reduce((a, m) => a + m.kcal, 0)
-  const doneKcal   = doneMeals.reduce((a, m) => a + m.kcal, 0)
-  const totalProt  = todayMeals.reduce((a, m) => a + m.protein, 0)
-  const doneProt   = doneMeals.reduce((a, m) => a + m.protein, 0)
-  const mealScore  = todayMeals.length > 0
-    ? Math.round((doneMeals.length / todayMeals.length) * 100)
-    : 0
+  // ── Compute stats ──
+  const doneMeals   = todayMeals.filter(m => m.done)
+  const totalKcal   = todayMeals.reduce((a, m) => a + m.kcal,    0)
+  const doneKcal    = doneMeals.reduce( (a, m) => a + m.kcal,    0)
+  const totalProt   = todayMeals.reduce((a, m) => a + m.protein, 0)
+  const doneProt    = doneMeals.reduce( (a, m) => a + m.protein, 0)
+  const totalCarbs  = todayMeals.reduce((a, m) => a + m.carbsG,  0)
+  const doneCarbs   = doneMeals.reduce( (a, m) => a + m.carbsG,  0)
+  const totalFat    = todayMeals.reduce((a, m) => a + m.fatG,    0)
+  const doneFat     = doneMeals.reduce( (a, m) => a + m.fatG,    0)
+  const mealScore   = todayMeals.length > 0
+    ? Math.round((doneMeals.length / todayMeals.length) * 100) : 0
+
+  // Group by section
+  const grouped: Record<string, Meal[]> = {}
+  todayMeals.forEach(m => {
+    const sec = getSec(m)
+    if (!grouped[sec]) grouped[sec] = []
+    grouped[sec].push(m)
+  })
+  const orderedSections = SECTION_ORDER.filter(s => grouped[s]?.length > 0)
 
   // ── Empty state — no diet chart uploaded ──
   if (!dietChart) {
@@ -180,11 +283,14 @@ export default function Nutrition() {
 
         <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 20, marginBottom: 20 }}>
 
-          {/* Today's Meal Log */}
+          {/* Today's Meal Log — Grouped by section */}
           <div style={{ background: '#fff', borderRadius: 24, padding: 28, boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
-            <div style={{ fontFamily: FONT_SYNE, fontSize: 20, fontWeight: 700, color: '#052e16', marginBottom: 6 }}>Today's Meal Log</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <div style={{ fontFamily: FONT_SYNE, fontSize: 20, fontWeight: 700, color: '#052e16' }}>Today's Meal Log</div>
+              <span style={{ fontSize: 12, color: GREEN, fontWeight: 600, fontFamily: FONT }}>{doneMeals.length}/{todayMeals.length} done</span>
+            </div>
             <p style={{ fontSize: 13, color: '#9ca3af', marginBottom: 20, fontFamily: FONT }}>
-              Tap meals in your dashboard to log them. They'll appear here.
+              Tap ✓ to log a meal, 📊 for macros, ✏️ to edit.
             </p>
 
             {todayMeals.length === 0 ? (
@@ -193,24 +299,54 @@ export default function Nutrition() {
                 <p style={{ fontSize: 14, color: '#9ca3af', fontFamily: FONT }}>No meals planned yet. Upload a diet chart from your dashboard.</p>
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {todayMeals.map((m, i) => (
-                  <div key={i} onClick={() => m.id && setRecipeMeal({ id: m.id, name: m.name })} style={{ display: 'flex', alignItems: 'center', gap: 14, background: m.done ? '#f0fdf4' : '#f9fafb', border: `1.5px solid ${m.done ? '#bbf7d0' : '#e5e7eb'}`, borderRadius: 14, padding: '13px 16px', cursor: m.id ? 'pointer' : 'default' }}>
-                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: m.done ? '#16a34a' : '#e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0 }}>
-                      {m.done ? '✅' : '⭕'}
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 11, color: m.done ? '#16a34a' : '#9ca3af', fontWeight: 600, marginBottom: 2, fontFamily: FONT }}>{m.time}</div>
-                      <div style={{ fontSize: 14, color: '#052e16', fontWeight: 600, fontFamily: FONT }}>{m.name}</div>
-                      <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2, fontFamily: FONT }}>{m.kcal} kcal · {m.protein}g protein{m.id ? ' · 📖 tap for recipe' : ''}</div>
-                    </div>
-                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: m.done ? '#16a34a' : '#9ca3af', fontFamily: FONT }}>
-                        {m.done ? 'Logged ✓' : 'Pending'}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+                {orderedSections.map(sec => {
+                  const info = SECTION_LABELS[sec] || { label: sec, emoji: '🍴' }
+                  return (
+                    <div key={sec}>
+                      {/* Section header */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                        <span style={{ fontSize: 16 }}>{info.emoji}</span>
+                        <span style={{ fontFamily: FONT_SYNE, fontSize: 13, fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: 0.8 }}>{info.label}</span>
+                        <div style={{ flex: 1, height: 1, background: '#f3f4f6' }} />
+                        <span style={{ fontSize: 11, color: '#9ca3af', fontFamily: FONT }}>
+                          {grouped[sec].filter(m => m.done).length}/{grouped[sec].length}
+                        </span>
+                      </div>
+                      {/* Meals in this section */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {grouped[sec].map((m, i) => (
+                          <div key={m.id || i} style={{ display: 'flex', alignItems: 'center', gap: 12, background: m.done ? '#f0fdf4' : '#f9fafb', border: `1.5px solid ${m.done ? '#bbf7d0' : '#e5e7eb'}`, borderRadius: 14, padding: '11px 14px' }}>
+                            {/* Toggle button */}
+                            <button
+                              onClick={() => toggleMeal(m)}
+                              disabled={!m.id || toggling === m.id}
+                              title={m.done ? 'Mark as undone' : 'Log this meal'}
+                              style={{ width: 30, height: 30, borderRadius: '50%', background: m.done ? GREEN : '#e5e7eb', border: 'none', color: '#fff', fontSize: 13, cursor: m.id ? 'pointer' : 'default', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s ease' }}
+                            >
+                              {toggling === m.id ? '…' : m.done ? '✓' : '○'}
+                            </button>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 11, color: m.done ? GREEN : '#9ca3af', fontWeight: 600, fontFamily: FONT }}>{m.time}</div>
+                              <div style={{ fontSize: 14, color: '#052e16', fontWeight: 600, fontFamily: FONT, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.name}</div>
+                              <div style={{ fontSize: 11, color: '#6b7280', marginTop: 1, fontFamily: FONT }}>{m.kcal} kcal · {m.protein}g P · {m.carbsG}g C · {m.fatG}g F</div>
+                            </div>
+                            {/* Action buttons */}
+                            <div style={{ display: 'flex', gap: 5, flexShrink: 0 }}>
+                              {m.id && (
+                                <>
+                                  <button onClick={() => setMacroMeal(m)} title="Macro detail" style={{ width: 28, height: 28, borderRadius: 8, background: '#eff6ff', border: '1px solid #bfdbfe', color: '#3b82f6', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>📊</button>
+                                  <button onClick={() => openEdit(m)} title="Edit meal" style={{ width: 28, height: 28, borderRadius: 8, background: '#fdf4ff', border: '1px solid #e9d5ff', color: '#a855f7', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✏️</button>
+                                  <button onClick={() => setRecipeMeal({ id: m.id!, name: m.name })} title="View recipe" style={{ width: 28, height: 28, borderRadius: 8, background: '#fff7ed', border: '1px solid #fed7aa', color: '#f97316', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>📖</button>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>
@@ -228,8 +364,10 @@ export default function Nutrition() {
                 </p>
               ) : (
                 [
-                  { label: 'Calories', done: doneKcal, total: totalKcal, unit: 'kcal', color: '#f97316' },
-                  { label: 'Protein',  done: doneProt,  total: totalProt,  unit: 'g',    color: '#16a34a' },
+                  { label: 'Calories', done: doneKcal,  total: totalKcal,  unit: 'kcal', color: '#f97316' },
+                  { label: 'Protein',  done: doneProt,  total: totalProt,  unit: 'g',    color: GREEN },
+                  { label: 'Carbs',    done: doneCarbs, total: totalCarbs, unit: 'g',    color: '#f59e0b' },
+                  { label: 'Fat',      done: doneFat,   total: totalFat,   unit: 'g',    color: '#ec4899' },
                 ].map(p => {
                   const pct = p.total > 0 ? Math.round((p.done / p.total) * 100) : 0
                   return (
@@ -353,21 +491,16 @@ export default function Nutrition() {
             ))}
           </div>
 
-          {/* CTA to log meals */}
+          {/* Remaining meals reminder */}
           {doneMeals.length < todayMeals.length && (
-            <div style={{ marginTop: 20, background: 'linear-gradient(135deg,#f0fdf4,#dcfce7)', border: '1px solid #bbf7d0', borderRadius: 16, padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+            <div style={{ marginTop: 20, background: 'linear-gradient(135deg,#f0fdf4,#dcfce7)', border: '1px solid #bbf7d0', borderRadius: 16, padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
               <div>
-                <div style={{ fontFamily: FONT_SYNE, fontSize: 16, fontWeight: 700, color: '#052e16', marginBottom: 4 }}>
-                  {todayMeals.length - doneMeals.length} meal{todayMeals.length - doneMeals.length > 1 ? 's' : ''} left to log today
+                <div style={{ fontFamily: FONT_SYNE, fontSize: 15, fontWeight: 700, color: '#052e16', marginBottom: 2 }}>
+                  {todayMeals.length - doneMeals.length} meal{todayMeals.length - doneMeals.length > 1 ? 's' : ''} left to log
                 </div>
-                <p style={{ fontSize: 13, color: '#6b7280', fontFamily: FONT }}>Go to your dashboard and tap meals to mark them as done.</p>
+                <p style={{ fontSize: 12, color: '#6b7280', fontFamily: FONT }}>Tap ✓ on any meal above to log it directly.</p>
               </div>
-              <button
-                onClick={() => router.push('/dashboard')}
-                style={{ padding: '12px 24px', background: 'linear-gradient(135deg,#16a34a,#22c55e)', color: '#fff', border: 'none', borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: FONT, boxShadow: '0 8px 24px rgba(22,163,74,0.25)', flexShrink: 0 }}
-              >
-                Log Meals on Dashboard →
-              </button>
+              <div style={{ fontSize: 26 }}>🍽️</div>
             </div>
           )}
 
@@ -387,6 +520,143 @@ export default function Nutrition() {
       </div>
 
       {recipeMeal && <RecipeModal mealId={recipeMeal.id} mealName={recipeMeal.name} onClose={() => setRecipeMeal(null)} />}
+
+      {/* ── Macro Detail Overlay ── */}
+      {macroMeal && (
+        <div onClick={() => setMacroMeal(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 24, padding: 32, maxWidth: 440, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', fontFamily: FONT }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+              <div>
+                <div style={{ fontFamily: FONT_SYNE, fontSize: 18, fontWeight: 800, color: DARK }}>{macroMeal.name}</div>
+                <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>{macroMeal.time} · {(SECTION_LABELS[macroMeal.mealType] || SECTION_LABELS.other).label}</div>
+              </div>
+              <button onClick={() => setMacroMeal(null)} style={{ background: '#f3f4f6', border: 'none', borderRadius: 8, width: 32, height: 32, cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+            </div>
+
+            {/* Macro rings */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 24 }}>
+              {[
+                { label: 'Calories', value: macroMeal.kcal, unit: 'kcal', color: '#f97316', bg: '#fff7ed' },
+                { label: 'Protein',  value: macroMeal.protein, unit: 'g', color: GREEN,      bg: '#f0fdf4' },
+                { label: 'Carbs',    value: macroMeal.carbsG, unit: 'g', color: '#f59e0b',   bg: '#fffbeb' },
+                { label: 'Fat',      value: macroMeal.fatG,   unit: 'g', color: '#ec4899',   bg: '#fdf2f8' },
+              ].map(n => (
+                <div key={n.label} style={{ background: n.bg, borderRadius: 16, padding: '16px 10px', textAlign: 'center' }}>
+                  <div style={{ fontFamily: FONT_SYNE, fontSize: 20, fontWeight: 800, color: n.color }}>{n.value}</div>
+                  <div style={{ fontSize: 10, color: n.color, fontWeight: 600, marginTop: 1 }}>{n.unit}</div>
+                  <div style={{ fontSize: 11, color: '#6b7280', marginTop: 4 }}>{n.label}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Macro proportion bar */}
+            {(() => {
+              const totalCal = (macroMeal.protein * 4) + (macroMeal.carbsG * 4) + (macroMeal.fatG * 9)
+              if (totalCal === 0) return null
+              const pPct = Math.round((macroMeal.protein * 4 / totalCal) * 100)
+              const cPct = Math.round((macroMeal.carbsG  * 4 / totalCal) * 100)
+              const fPct = 100 - pPct - cPct
+              return (
+                <div>
+                  <div style={{ fontSize: 12, color: '#6b7280', fontWeight: 600, marginBottom: 8 }}>Calorie Breakdown</div>
+                  <div style={{ display: 'flex', height: 10, borderRadius: 6, overflow: 'hidden', marginBottom: 8 }}>
+                    <div style={{ width: `${pPct}%`, background: GREEN }} />
+                    <div style={{ width: `${cPct}%`, background: '#f59e0b' }} />
+                    <div style={{ width: `${fPct}%`, background: '#ec4899' }} />
+                  </div>
+                  <div style={{ display: 'flex', gap: 16 }}>
+                    {[{ label: `Protein ${pPct}%`, color: GREEN }, { label: `Carbs ${cPct}%`, color: '#f59e0b' }, { label: `Fat ${fPct}%`, color: '#ec4899' }].map(l => (
+                      <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: l.color }} />
+                        <span style={{ fontSize: 11, color: '#6b7280', fontFamily: FONT }}>{l.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )
+            })()}
+
+            <div style={{ marginTop: 20, display: 'flex', gap: 10 }}>
+              <button onClick={() => { setMacroMeal(null); openEdit(macroMeal) }} style={{ flex: 1, padding: '10px', background: '#fdf4ff', border: '1px solid #e9d5ff', borderRadius: 10, color: '#a855f7', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: FONT }}>✏️ Edit Meal</button>
+              <button onClick={() => setMacroMeal(null)} style={{ flex: 1, padding: '10px', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 10, color: '#6b7280', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: FONT }}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Edit Meal Modal ── */}
+      {editMeal && (
+        <div onClick={() => setEditMeal(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 24, padding: 32, maxWidth: 460, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', fontFamily: FONT }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <div style={{ fontFamily: FONT_SYNE, fontSize: 18, fontWeight: 800, color: DARK }}>Edit Meal</div>
+              <button onClick={() => setEditMeal(null)} style={{ background: '#f3f4f6', border: 'none', borderRadius: 8, width: 32, height: 32, cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {/* Name + AI estimate button */}
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 700, color: '#374151', display: 'block', marginBottom: 6 }}>Meal Name</label>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    value={editForm.name}
+                    onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))}
+                    style={{ flex: 1, padding: '10px 12px', border: '1.5px solid #e5e7eb', borderRadius: 10, fontSize: 14, fontFamily: FONT, outline: 'none', color: DARK }}
+                    onFocus={e => (e.target.style.borderColor = GREEN)}
+                    onBlur={e => (e.target.style.borderColor = '#e5e7eb')}
+                  />
+                  <button
+                    onClick={estimateMacros}
+                    disabled={estimating || !editForm.name.trim()}
+                    title="Use AI to estimate macros"
+                    style={{ padding: '10px 14px', background: estimating ? '#f0fdf4' : 'linear-gradient(135deg,#16a34a,#22c55e)', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 12, cursor: estimating ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
+                  >
+                    {estimating ? '…' : '✨ AI Estimate'}
+                  </button>
+                </div>
+                {estimating && <p style={{ fontSize: 11, color: GREEN, marginTop: 4 }}>Estimating macros with AI…</p>}
+              </div>
+
+              <div style={{ display: 'flex', gap: 10 }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: '#374151', display: 'block', marginBottom: 6 }}>Time</label>
+                  <input type="time" value={editForm.time} onChange={e => setEditForm(f => ({ ...f, time: e.target.value }))}
+                    style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e5e7eb', borderRadius: 10, fontSize: 14, fontFamily: FONT, outline: 'none', color: DARK, boxSizing: 'border-box' }}
+                    onFocus={e => (e.target.style.borderColor = GREEN)} onBlur={e => (e.target.style.borderColor = '#e5e7eb')} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: '#374151', display: 'block', marginBottom: 6 }}>Calories (kcal)</label>
+                  <input type="number" value={editForm.kcal} onChange={e => setEditForm(f => ({ ...f, kcal: e.target.value }))}
+                    style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e5e7eb', borderRadius: 10, fontSize: 14, fontFamily: FONT, outline: 'none', color: DARK, boxSizing: 'border-box' }}
+                    onFocus={e => (e.target.style.borderColor = '#f97316')} onBlur={e => (e.target.style.borderColor = '#e5e7eb')} />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
+                {[
+                  { label: 'Protein (g)', key: 'protein' as const, color: GREEN },
+                  { label: 'Carbs (g)',   key: 'carbs'   as const, color: '#f59e0b' },
+                  { label: 'Fat (g)',     key: 'fat'     as const, color: '#ec4899' },
+                ].map(f => (
+                  <div key={f.key}>
+                    <label style={{ fontSize: 12, fontWeight: 700, color: '#374151', display: 'block', marginBottom: 6 }}>{f.label}</label>
+                    <input type="number" value={editForm[f.key]} onChange={e => setEditForm(prev => ({ ...prev, [f.key]: e.target.value }))}
+                      style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e5e7eb', borderRadius: 10, fontSize: 14, fontFamily: FONT, outline: 'none', color: DARK, boxSizing: 'border-box' }}
+                      onFocus={e => (e.target.style.borderColor = f.color)} onBlur={e => (e.target.style.borderColor = '#e5e7eb')} />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
+              <button onClick={saveEdit} disabled={editSaving} style={{ flex: 1, padding: '12px', background: editSaving ? '#d1fae5' : 'linear-gradient(135deg,#16a34a,#22c55e)', color: '#fff', border: 'none', borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: editSaving ? 'not-allowed' : 'pointer', fontFamily: FONT }}>
+                {editSaving ? 'Saving…' : 'Save Changes'}
+              </button>
+              <button onClick={() => setEditMeal(null)} style={{ padding: '12px 20px', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 12, color: '#6b7280', fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: FONT }}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

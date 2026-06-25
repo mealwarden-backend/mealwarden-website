@@ -11,12 +11,13 @@ interface Props {
   onClose: () => void
 }
 
-type TabType    = 'login' | 'signup'
+type TabType    = 'login' | 'signup' | 'forgot'
 type StatusType = 'idle' | 'loading' | 'success' | 'error'
 
 export default function LoginModal({ isOpen, onClose }: Props) {
   const { login, register, loginWithGoogle } = useAuth()
   const [tab, setTab]               = useState<TabType>('login')
+  const [forgotEmail, setForgotEmail] = useState('')
   const [email, setEmail]           = useState('')
   const [password, setPassword]     = useState('')
   const [name, setName]             = useState('')
@@ -95,6 +96,27 @@ export default function LoginModal({ isOpen, onClose }: Props) {
     setStatus('idle')
     setErrorMsg('')
     setSuccessMsg('')
+    setForgotEmail('')
+  }
+
+  const handleForgot = async () => {
+    if (!forgotEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(forgotEmail)) {
+      setStatus('error'); setErrorMsg('Please enter a valid email address.'); return
+    }
+    setStatus('loading'); setErrorMsg('')
+    try {
+      const API = process.env.NEXT_PUBLIC_API_URL || 'https://mealwarden-backend-production.up.railway.app'
+      await fetch(`${API}/api/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotEmail.trim().toLowerCase() }),
+      })
+      // Always show success (don't reveal whether email exists)
+      setStatus('success')
+      setSuccessMsg('✅ If that email is registered, a reset link has been sent.')
+    } catch {
+      setStatus('error'); setErrorMsg('Network error. Please try again.')
+    }
   }
 
   const validate = () => {
@@ -240,14 +262,16 @@ export default function LoginModal({ isOpen, onClose }: Props) {
               fontSize: 13, color: 'rgba(255,255,255,0.65)',
               fontFamily: 'var(--font-jakarta), Plus Jakarta Sans, sans-serif',
             }}>
-              {tab === 'login'
+              {tab === 'forgot'
+                ? 'Enter your email to get a reset link'
+                : tab === 'login'
                 ? 'Log in to your guardian dashboard'
                 : 'Start free — no credit card needed'}
             </div>
           </div>
 
-          {/* ── Tab Switcher ── */}
-          <div style={{
+          {/* ── Tab Switcher (hidden on forgot tab) ── */}
+          {tab !== 'forgot' && <div style={{
             display: 'flex', background: '#f3f4f6',
             margin: '20px 28px 0',
             borderRadius: 10, padding: 4,
@@ -271,10 +295,61 @@ export default function LoginModal({ isOpen, onClose }: Props) {
                 {t === 'login' ? 'Log In' : 'Sign Up'}
               </button>
             ))}
-          </div>
+          </div>}
 
           {/* ── Form Body ── */}
           <div style={{ padding: '20px 28px 28px' }}>
+
+            {/* ── Forgot Password View ── */}
+            {tab === 'forgot' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {status === 'success' ? (
+                  <div style={{ background: '#f0fdf4', border: '1.5px solid #bbf7d0', borderRadius: 10, padding: '18px 16px', textAlign: 'center' }}>
+                    <div style={{ fontSize: 28, marginBottom: 8 }}>📬</div>
+                    <p style={{ fontSize: 15, color: '#16a34a', fontWeight: 700, fontFamily: 'var(--font-jakarta), Plus Jakarta Sans, sans-serif' }}>{successMsg}</p>
+                    <p style={{ fontSize: 12, color: '#6b7280', marginTop: 4, fontFamily: 'var(--font-jakarta), Plus Jakarta Sans, sans-serif' }}>Check your inbox and follow the link to reset your password.</p>
+                  </div>
+                ) : (
+                  <>
+                    {status === 'error' && errorMsg && (
+                      <div style={{ background: '#fff1f2', border: '1.5px solid #fecdd3', borderRadius: 10, padding: '12px 16px' }}>
+                        <p style={{ fontSize: 13, color: '#e11d48', fontWeight: 500, fontFamily: 'var(--font-jakarta), Plus Jakarta Sans, sans-serif' }}>⚠️ {errorMsg}</p>
+                      </div>
+                    )}
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 5, fontFamily: 'var(--font-jakarta), Plus Jakarta Sans, sans-serif' }}>Email Address</label>
+                      <input
+                        type="email"
+                        placeholder="you@example.com"
+                        value={forgotEmail}
+                        onChange={e => { setForgotEmail(e.target.value); setStatus('idle'); setErrorMsg('') }}
+                        disabled={isLoading}
+                        style={inputStyle}
+                        onFocus={e => (e.target.style.borderColor = '#16a34a')}
+                        onBlur={e => (e.target.style.borderColor = '#e5e7eb')}
+                        onKeyDown={e => { if (e.key === 'Enter') handleForgot() }}
+                      />
+                    </div>
+                    <button
+                      onClick={handleForgot}
+                      disabled={isLoading}
+                      style={{ width: '100%', padding: '13px 0', background: isLoading ? '#9ca3af' : 'linear-gradient(135deg,#16a34a,#22c55e)', color: '#fff', border: 'none', borderRadius: 12, fontWeight: 700, fontSize: 15, cursor: isLoading ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-jakarta), Plus Jakarta Sans, sans-serif' }}
+                    >
+                      {isLoading ? 'Sending...' : 'Send Reset Link'}
+                    </button>
+                  </>
+                )}
+                <button
+                  onClick={() => switchTab('login')}
+                  style={{ background: 'none', border: 'none', color: '#16a34a', fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font-jakarta), Plus Jakarta Sans, sans-serif', padding: 0 }}
+                >
+                  ← Back to Log In
+                </button>
+              </div>
+            )}
+
+            {/* Normal login/signup form — hidden when on forgot tab */}
+            {tab !== 'forgot' && <>
 
             {/* Success message */}
             {status === 'success' && (
@@ -422,11 +497,13 @@ export default function LoginModal({ isOpen, onClose }: Props) {
                     Password
                   </label>
                   {tab === 'login' && (
-                    <span style={{
-                      fontSize: 12, color: '#16a34a',
-                      fontWeight: 600, cursor: 'pointer',
-                      fontFamily: 'var(--font-jakarta), Plus Jakarta Sans, sans-serif',
-                    }}>
+                    <span
+                      onClick={() => !isLoading && switchTab('forgot')}
+                      style={{
+                        fontSize: 12, color: '#16a34a',
+                        fontWeight: 600, cursor: 'pointer',
+                        fontFamily: 'var(--font-jakarta), Plus Jakarta Sans, sans-serif',
+                      }}>
                       Forgot password?
                     </span>
                   )}
@@ -560,6 +637,7 @@ export default function LoginModal({ isOpen, onClose }: Props) {
                 {tab === 'login' ? 'Sign up free' : 'Log in'}
               </span>
             </p>
+            </>}
           </div>
         </div>
       </div>

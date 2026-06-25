@@ -34,6 +34,22 @@ export default function Settings() {
   const [saved, setSaved]     = useState(false)
   const [busy, setBusy]       = useState('')
 
+  // Water goal
+  const [waterGoal, setWaterGoal] = useState(8)
+  const [savingW, setSavingW]     = useState(false)
+  const [savedW, setSavedW]       = useState(false)
+
+  // Notification preferences
+  const [notifs, setNotifs] = useState({
+    mealReminders:    true,
+    prepAlerts:       true,
+    groceryReminders: false,
+    dailySummary:     true,
+    waterReminders:   true,
+  })
+  const [savingN, setSavingN] = useState(false)
+  const [savedN, setSavedN]   = useState(false)
+
   // Guardian
   const [gSel, setGSel]       = useState<'meenu' | 'maddy' | 'custom'>('meenu')
   const [cgName, setCgName]   = useState('')
@@ -57,6 +73,10 @@ export default function Settings() {
         setWeight(u.weightKg ? String(u.weightKg) : '')
         setHeight(u.heightCm ? String(u.heightCm) : '')
         setGender(u.gender || 'male')
+        setWaterGoal(u.waterGoalGlasses || u.waterGoal || 8)
+        if (u.notificationPreferences) {
+          setNotifs(prev => ({ ...prev, ...u.notificationPreferences }))
+        }
         setGSel((u.guardian as any) || 'meenu')
         if (u.guardian === 'custom' && u.customGuardian) {
           const cg: any = u.customGuardian
@@ -95,6 +115,26 @@ export default function Settings() {
       api.clearCache?.()
       setSavedG(true); setTimeout(() => setSavedG(false), 2500)
     } catch {} finally { setSavingG(false) }
+  }
+
+  const saveWaterGoal = async () => {
+    setSavingW(true); setSavedW(false)
+    try {
+      await api.updateProfile({ waterGoalGlasses: waterGoal })
+      setSavedW(true); setTimeout(() => setSavedW(false), 2500)
+    } catch {} finally { setSavingW(false) }
+  }
+
+  const saveNotifs = async () => {
+    setSavingN(true); setSavedN(false)
+    try {
+      await api.updateProfile({ notificationPreferences: notifs })
+      setSavedN(true); setTimeout(() => setSavedN(false), 2500)
+    } catch {} finally { setSavingN(false) }
+  }
+
+  const toggleNotif = (key: keyof typeof notifs) => {
+    setNotifs(prev => ({ ...prev, [key]: !prev[key] }))
   }
 
   const doExport = async () => {
@@ -219,10 +259,86 @@ export default function Settings() {
           </div>
         </div>
 
-        {/* Notifications note */}
+        {/* Water Goal */}
         <div style={card}>
-          <div style={cardTitle}>Reminders</div>
-          <p style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.7 }}>Meal reminders, prep alerts and streak nudges are delivered through the <strong>MealWarden app</strong> on your phone. Install the app and enable notifications to get them.</p>
+          <div style={cardTitle}>💧 Daily Water Goal</div>
+          <p style={{ fontSize: 14, color: '#6b7280', marginBottom: 18 }}>How many glasses of water do you aim for each day?</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginBottom: 20 }}>
+            <button
+              onClick={() => setWaterGoal(g => Math.max(4, g - 1))}
+              style={{ width: 40, height: 40, borderRadius: '50%', border: '1.5px solid #e5e7eb', background: '#f9fafb', fontSize: 22, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FONT }}
+            >−</button>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontFamily: FONT_SYNE, fontSize: 36, fontWeight: 800, color: '#3b82f6', lineHeight: 1 }}>{waterGoal}</div>
+              <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 4 }}>glasses / day</div>
+            </div>
+            <button
+              onClick={() => setWaterGoal(g => Math.min(15, g + 1))}
+              style={{ width: 40, height: 40, borderRadius: '50%', border: '1.5px solid #e5e7eb', background: '#f9fafb', fontSize: 22, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FONT }}
+            >+</button>
+          </div>
+          {/* Visual indicator */}
+          <div style={{ display: 'flex', gap: 4, marginBottom: 18 }}>
+            {Array.from({ length: 15 }).map((_, i) => (
+              <div key={i} style={{ flex: 1, height: 6, borderRadius: 3, background: i < waterGoal ? '#3b82f6' : '#e5e7eb', transition: 'background 0.2s ease' }} />
+            ))}
+          </div>
+          <button
+            onClick={saveWaterGoal}
+            disabled={savingW}
+            style={{ padding: '11px 24px', background: savedW ? '#16a34a' : '#3b82f6', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: FONT }}
+          >
+            {savingW ? 'Saving…' : savedW ? '✅ Saved!' : 'Save Goal'}
+          </button>
+        </div>
+
+        {/* Notification Preferences */}
+        <div style={card}>
+          <div style={cardTitle}>🔔 Notification Preferences</div>
+          <p style={{ fontSize: 14, color: '#6b7280', marginBottom: 18, lineHeight: 1.6 }}>
+            Manage your push notification preferences. These are synced to your mobile app.
+          </p>
+          {([
+            { key: 'mealReminders',    icon: '🍽️', label: 'Meal reminders',     desc: 'Get notified before each scheduled meal' },
+            { key: 'prepAlerts',       icon: '🥗', label: 'Prep alerts',         desc: 'Reminders to prep ingredients in advance' },
+            { key: 'waterReminders',   icon: '💧', label: 'Water reminders',     desc: 'Nudges to hit your daily water goal' },
+            { key: 'dailySummary',     icon: '📊', label: 'Daily summary',       desc: 'End-of-day recap of meals logged and adherence' },
+            { key: 'groceryReminders', icon: '🛒', label: 'Grocery reminders',   desc: 'Remind to buy items before the week starts' },
+          ] as const).map(n => (
+            <div key={n.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #f3f4f6' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                <span style={{ fontSize: 22, lineHeight: 1.2 }}>{n.icon}</span>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#052e16' }}>{n.label}</div>
+                  <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>{n.desc}</div>
+                </div>
+              </div>
+              <div
+                onClick={() => toggleNotif(n.key)}
+                style={{
+                  width: 44, height: 26, borderRadius: 13, cursor: 'pointer',
+                  background: notifs[n.key] ? '#16a34a' : '#d1d5db',
+                  position: 'relative', flexShrink: 0,
+                  transition: 'background 0.2s ease',
+                }}
+              >
+                <div style={{
+                  width: 20, height: 20, borderRadius: '50%', background: '#fff',
+                  position: 'absolute', top: 3,
+                  left: notifs[n.key] ? 21 : 3,
+                  transition: 'left 0.2s ease',
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
+                }} />
+              </div>
+            </div>
+          ))}
+          <button
+            onClick={saveNotifs}
+            disabled={savingN}
+            style={{ marginTop: 18, padding: '11px 24px', background: savedN ? '#16a34a' : '#052e16', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: FONT }}
+          >
+            {savingN ? 'Saving…' : savedN ? '✅ Saved!' : 'Save Preferences'}
+          </button>
         </div>
 
         {/* Data & privacy */}

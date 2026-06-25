@@ -162,11 +162,14 @@ export const api = {
   getDietPlans:   () => cget('/api/diet-plans'),
   generateDiet:   (payload: any) => mutate('/api/diet-plans/generate', { method: 'POST', body: JSON.stringify(payload) }),
   activatePlan:   (id: string) => mutate(`/api/diet-plans/${id}/activate`, { method: 'PUT' }),
+  deleteDietPlan: (id: string) => mutate(`/api/diet-plans/${id}`, { method: 'DELETE' }),
   getTodaysMeals: () => cget('/api/meals/today'),
   getWeeklyMeals: () => cget('/api/meals/weekly'),
   getTodaysLogs:  () => cget('/api/meal-logs/today'),
   toggleLog:      (payload: any) => mutate('/api/meal-logs/toggle', { method: 'POST', body: JSON.stringify(payload) }),
   getRecipe:      (mealId: string) => cget(`/api/meals/${mealId}/recipe`),
+  updateMeal:     (mealId: string, payload: any) => mutate(`/api/meals/${mealId}`, { method: 'PUT', body: JSON.stringify(payload) }),
+  estimateMeal:   (mealName: string) => mutate('/api/meals/estimate', { method: 'POST', body: JSON.stringify({ mealName }) }),
 
   // Water
   getWater: () => cget('/api/water/today'),
@@ -189,6 +192,9 @@ export const api = {
   getWeeklyAnalytics:  () => cget('/api/analytics/weekly'),
   getAnalyticsSummary: (period = 'week') => cget(`/api/analytics/summary?period=${period}`),
   getStreak:           () => cget('/api/analytics/streak'),
+
+  // Coins + badges
+  getCoinStatus: () => cget('/api/coins/status'),
 
   // Streak — MealWarden Mates (friends) + leaderboard
   friendsLeaderboard:  () => cget('/api/friends/leaderboard'),

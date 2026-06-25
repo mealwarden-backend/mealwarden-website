@@ -1128,6 +1128,9 @@ export default function Dashboard() {
               <button onClick={() => setShowEditProfile(true)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 18px', background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: FONT, transition: 'background 0.2s ease' }} onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.25)')} onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.15)')}>
                 ✏️ Edit Profile
               </button>
+              <button onClick={() => router.push('/profile')} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 18px', background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: FONT, transition: 'background 0.2s ease' }} onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.25)')} onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.15)')}>
+                👤 My Profile
+              </button>
             </div>
           </div>
         </div>
@@ -1175,6 +1178,7 @@ export default function Dashboard() {
         {/* Explore feature pages */}
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 20 }}>
           {[
+            { icon: '🛡️', label: 'Ask Guardian', href: '/chat' },
             { icon: '📊', label: 'My Nutrition', href: '/nutrition' },
             { icon: '📅', label: 'Weekly Plan', href: '/weekly' },
             { icon: '📈', label: 'Progress', href: '/progress' },
