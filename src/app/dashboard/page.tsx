@@ -637,16 +637,37 @@ function DietChartUploadModal({
   )
 }
 
-// ─── Grocery List Modal ───────────────────────────────────
+// ─── Grocery List Modal — REAL DATA ──────────────────────
 function GroceryListModal({ dietChart, onClose, onUpload }: { dietChart: DietChart | null; onClose: () => void; onUpload: () => void }) {
-  const groceries = [
-    { category: '🥩 Proteins', items: ['Chicken breast (500g)', 'Fish fillet (400g)', 'Eggs (12)', 'Greek yogurt (500g)'] },
-    { category: '🌾 Grains',   items: ['Rolled oats (500g)', 'Brown rice (1kg)'] },
-    { category: '🥦 Veggies',  items: ['Mixed vegetables (500g)', 'Spinach (200g)', 'Broccoli (300g)'] },
-    { category: '🍎 Fruits',   items: ['Seasonal fruits (500g)', 'Bananas (6)'] },
-    { category: '🥜 Nuts',     items: ['Almonds (200g)', 'Walnuts (100g)'] },
-    { category: '🧃 Extras',   items: ['Olive oil (250ml)', 'Low-fat milk (1L)', 'Green tea bags'] },
-  ]
+  const [groceryData, setGroceryData] = useState<any>(null)
+  const [checked, setChecked]         = useState<Set<string>>(new Set())
+  const [loading, setLoading]         = useState(false)
+
+  // Fetch real grocery list from API on mount
+  useEffect(() => {
+    if (!dietChart) return
+    setLoading(true)
+    api.getGrocery()
+      .then((d: any) => {
+        setGroceryData(d)
+        setChecked(new Set<string>(d?.checkedKeys || []))
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [dietChart])
+
+  const categories: any[] = groceryData?.categories || []
+  const totalItems = categories.reduce((s: number, c: any) => s + (c.items?.length || 0), 0)
+
+  const toggle = (key: string) => {
+    setChecked(prev => {
+      const next = new Set(prev)
+      next.has(key) ? next.delete(key) : next.add(key)
+      api.setGroceryChecked([...next]).catch(() => {})
+      return next
+    })
+  }
+
   return (
     <>
       <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(5,46,22,0.6)', backdropFilter: 'blur(8px)' }} />
@@ -655,37 +676,61 @@ function GroceryListModal({ dietChart, onClose, onUpload }: { dietChart: DietCha
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <div style={{ fontFamily: FONT_SYNE, fontSize: 20, fontWeight: 800, color: '#fff' }}>🛒 Grocery List</div>
-              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', marginTop: 4, fontFamily: FONT }}>{dietChart ? `Generated from: ${dietChart.fileName}` : 'Upload your diet chart to generate'}</div>
+              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', marginTop: 4, fontFamily: FONT }}>
+                {dietChart ? `From: ${groceryData?.planName || dietChart.fileName}` : 'Upload your diet chart to generate'}
+              </div>
             </div>
             <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FONT }}>×</button>
           </div>
         </div>
+
         {!dietChart ? (
           <div style={{ padding: '48px 32px', textAlign: 'center', fontFamily: FONT }}>
             <div style={{ fontSize: 56, marginBottom: 16 }}>📋</div>
             <div style={{ fontFamily: FONT_SYNE, fontSize: 20, fontWeight: 700, color: '#052e16', marginBottom: 8 }}>No Diet Chart Yet</div>
-            <p style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.7, marginBottom: 24, fontFamily: FONT }}>Upload your dietitian's chart and MealWarden will automatically generate your weekly grocery list.</p>
+            <p style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.7, marginBottom: 24, fontFamily: FONT }}>Upload your dietitian&apos;s chart and MealWarden will automatically generate your weekly grocery list.</p>
             <button onClick={() => { onClose(); onUpload() }} style={{ padding: '13px 28px', background: 'linear-gradient(135deg,#16a34a,#22c55e)', color: '#fff', border: 'none', borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: FONT }}>📸 Upload Diet Chart Now →</button>
+          </div>
+        ) : loading ? (
+          <div style={{ padding: '48px 32px', textAlign: 'center', fontFamily: FONT, color: '#6b7280', fontSize: 15 }}>
+            Loading your grocery list…
+          </div>
+        ) : categories.length === 0 ? (
+          <div style={{ padding: '48px 32px', textAlign: 'center', fontFamily: FONT }}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>🛒</div>
+            <div style={{ fontSize: 15, color: '#6b7280' }}>Your grocery list is being generated. Check back shortly.</div>
           </div>
         ) : (
           <div style={{ overflowY: 'auto', padding: 24, flex: 1, fontFamily: FONT }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <span style={{ fontSize: 14, color: '#6b7280', fontFamily: FONT }}>{groceries.reduce((a, c) => a + c.items.length, 0)} items · Weekly list</span>
-              <button style={{ padding: '6px 16px', background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>📥 Download</button>
+              <span style={{ fontSize: 14, color: '#6b7280', fontFamily: FONT }}>{totalItems} items · {checked.size} checked</span>
+              <span style={{ padding: '6px 16px', background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', borderRadius: 8, fontSize: 13, fontWeight: 700, fontFamily: FONT }}>
+                {Math.round((checked.size / Math.max(totalItems, 1)) * 100)}% done
+              </span>
             </div>
-            {groceries.map((cat, i) => (
-              <div key={i} style={{ marginBottom: 20 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#052e16', marginBottom: 10, fontFamily: FONT }}>{cat.category}</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {cat.items.map((item, j) => (
-                    <div key={j} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: '#f9fafb', borderRadius: 10, border: '1px solid #e5e7eb' }}>
-                      <div style={{ width: 18, height: 18, borderRadius: 4, border: '1.5px solid #16a34a', flexShrink: 0 }} />
-                      <span style={{ fontSize: 14, color: '#374151', fontFamily: FONT }}>{item}</span>
-                    </div>
-                  ))}
+            {categories.map((cat: any, ci: number) => {
+              const catName = cat.name || cat.category || cat.title || 'Items'
+              return (
+                <div key={ci} style={{ marginBottom: 20 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#052e16', marginBottom: 10, fontFamily: FONT }}>{catName}</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {(cat.items || []).map((it: any, ii: number) => {
+                      const key = `${ci}-${ii}`
+                      const done = checked.has(key)
+                      const label = it.item || it.name || String(it)
+                      return (
+                        <div key={ii} onClick={() => toggle(key)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: done ? '#f0fdf4' : '#f9fafb', borderRadius: 10, border: `1px solid ${done ? '#bbf7d0' : '#e5e7eb'}`, cursor: 'pointer' }}>
+                          <div style={{ width: 18, height: 18, borderRadius: 4, border: `1.5px solid #16a34a`, background: done ? '#16a34a' : 'transparent', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 12, fontWeight: 700 }}>
+                            {done ? '✓' : ''}
+                          </div>
+                          <span style={{ fontSize: 14, color: done ? '#6b7280' : '#374151', fontFamily: FONT, textDecoration: done ? 'line-through' : 'none' }}>{label}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>

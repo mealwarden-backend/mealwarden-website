@@ -11,6 +11,7 @@ interface User {
   avatar: string
   plan: string
   token: string
+  refreshToken: string  // persisted so api.ts can silently rotate on 401
 }
 
 interface AuthResult { success: boolean; error?: string }
@@ -36,12 +37,13 @@ function toUser(json: any, fallbackName: string, fallbackEmail: string): User | 
   const token = d.token || d.accessToken || ''
   if (!token) return null
   return {
-    id:     u.id || '',
-    name:   u.name || fallbackName,
-    email:  u.email || fallbackEmail,
-    avatar: initials(u.name || fallbackName || fallbackEmail),
-    plan:   u.subscriptionTier || u.plan || 'free',
+    id:           u.id || '',
+    name:         u.name || fallbackName,
+    email:        u.email || fallbackEmail,
+    avatar:       initials(u.name || fallbackName || fallbackEmail),
+    plan:         u.subscriptionTier || u.plan || 'free',
     token,
+    refreshToken: d.refreshToken || '',  // persist so api.ts can silently rotate on 401
   }
 }
 

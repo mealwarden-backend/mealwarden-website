@@ -14,7 +14,59 @@ export function authToken(): string {
   } catch { return '' }
 }
 
-async function req(path: string, opts: RequestInit = {}): Promise<any> {
+function getRefreshToken(): string {
+  try {
+    const s = localStorage.getItem('mw_user')
+    return s ? (JSON.parse(s).refreshToken || '') : ''
+  } catch { return '' }
+}
+
+// ── Silent token rotation ─────────────────────────────────────────────────────
+// One refresh call in-flight at a time. All concurrent 401s share the same
+// promise — mirrors the Axios interceptor in the mobile app.
+let _refreshing: Promise<string> | null = null
+
+async function refreshSession(): Promise<string> {
+  if (_refreshing) return _refreshing
+  _refreshing = (async () => {
+    const rt = getRefreshToken()
+    if (!rt) throw new Error('no_refresh_token')
+    const res = await fetch(`${API}/api/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken: rt }),
+    })
+    const json = await res.json().catch(() => ({}))
+    if (!res.ok) throw new Error('refresh_failed')
+    const newToken: string = json?.data?.token || json?.data?.accessToken || ''
+    const newRefresh: string = json?.data?.refreshToken || rt
+    if (!newToken) throw new Error('no_token_in_refresh_response')
+    // Patch localStorage in-place so all subsequent calls pick up the new token.
+    try {
+      const saved = JSON.parse(localStorage.getItem('mw_user') || '{}')
+      saved.token = newToken
+      saved.refreshToken = newRefresh
+      localStorage.setItem('mw_user', JSON.stringify(saved))
+    } catch {}
+    return newToken
+  })().finally(() => { _refreshing = null })
+  return _refreshing
+}
+
+function forceLogout(): void {
+  try {
+    localStorage.removeItem('mw_user')
+    localStorage.removeItem('mw_profile')
+    localStorage.removeItem('mw_diet_chart')
+  } catch {}
+  clearCache()
+  // Let the current tick finish before redirecting so callers don't get a
+  // torn state if they catch the error.
+  setTimeout(() => { window.location.href = '/' }, 0)
+}
+
+// _retry flag prevents infinite loops: we only attempt one refresh per request.
+async function req(path: string, opts: RequestInit = {}, _retry = false): Promise<any> {
   const t = authToken()
   const res = await fetch(`${API}${path}`, {
     ...opts,
@@ -24,6 +76,18 @@ async function req(path: string, opts: RequestInit = {}): Promise<any> {
       ...(opts.headers || {}),
     },
   })
+
+  // ── 401 → attempt silent refresh, then replay once ──
+  if (res.status === 401 && !_retry) {
+    try {
+      await refreshSession()
+      return req(path, opts, true)
+    } catch {
+      forceLogout()
+      throw new Error('Session expired. Please log in again.')
+    }
+  }
+
   const json = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(json?.message || json?.error || `Request failed (${res.status})`)
   return json
