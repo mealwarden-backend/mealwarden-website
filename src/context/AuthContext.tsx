@@ -20,7 +20,7 @@ interface AuthContextType {
   user: User | null
   loading: boolean
   login:           (emailOrUser: string | User, password?: string) => Promise<AuthResult>
-  register:        (name: string, email: string, password: string) => Promise<AuthResult>
+  register:        (name: string, email: string, password: string, referralCode?: string) => Promise<AuthResult>
   loginWithGoogle: (idToken: string) => Promise<AuthResult>
   logout:          () => void
 }
@@ -82,7 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const register = async (name: string, email: string, password: string): Promise<AuthResult> => {
+  const register = async (name: string, email: string, password: string, referralCode?: string): Promise<AuthResult> => {
     try {
       // Backend expects firstName/lastName, not a single name field.
       const parts = name.trim().split(/\s+/)
@@ -91,7 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await fetch(`${API}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ firstName, lastName, email, password }),
+        body: JSON.stringify({ firstName, lastName, email, password, ...(referralCode ? { referralCode } : {}) }),
       })
       const json = await res.json()
       if (!res.ok) return { success: false, error: json.message || json.error || 'Registration failed. Please try again.' }

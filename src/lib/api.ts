@@ -210,5 +210,27 @@ export const api = {
   askAssistant: (question: string, guardian?: string, history?: any[], persona?: string) =>
     mutate('/api/assistant/ask', { method: 'POST', body: JSON.stringify({ question, guardian, history, persona }) }),
 
+  // Coins
+  // Coins
+  getCoinStatus:      () => cget('/api/coins/status'),
+  getCoinLedger:      () => cget('/api/coins/ledger'),
+  getCoinDailyEvents: () => cget('/api/coins/daily-events'),
+  streakFreeze:       () => mutate('/api/coins/streak-freeze', { method: 'POST' }),
+
+  // Circles
+  getMyCircles:         () => cget('/api/circles/mine'),
+  getCircleInvites:     () => cget('/api/circles/invites'),
+  createCircle:         (data: { name: string; description?: string }) => mutate('/api/circles', { method: 'POST', body: JSON.stringify(data) }),
+  joinCircle:           (code: string) => mutate('/api/circles/join', { method: 'POST', body: JSON.stringify({ code }) }),
+  inviteToCircle:       (circleId: string, userId: string) => mutate(`/api/circles/${circleId}/invite`, { method: 'POST', body: JSON.stringify({ userId }) }),
+  respondCircleInvite:  (inviteId: string, action: 'accept' | 'reject') => mutate('/api/circles/respond', { method: 'POST', body: JSON.stringify({ inviteId, action }) }),
+  getCircleLeaderboard: (circleId: string) => cget(`/api/circles/${circleId}/leaderboard`),
+  leaveCircle:          (circleId: string) => mutate(`/api/circles/${circleId}/leave`, { method: 'POST' }),
+
+  // Referral
+  getReferralCode:   () => cget('/api/referral/my-code'),
+  getReferralStats:  () => cget('/api/referral/stats'),
+  applyReferralCode: (code: string) => mutate('/api/referral/apply', { method: 'POST', body: JSON.stringify({ code }) }),
+
   clearCache,
 }

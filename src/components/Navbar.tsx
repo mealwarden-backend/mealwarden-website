@@ -197,6 +197,7 @@ export default function Navbar() {
                     {[
                       { icon: '📊', label: 'Dashboard',       onClick: () => { router.push('/dashboard'); setShowDropdown(false) } },
                       { icon: '🔥', label: 'Streak & Mates',  onClick: () => { router.push('/streak'); setShowDropdown(false) } },
+                      { icon: '🪙', label: 'Coin Center',     onClick: () => { router.push('/coins'); setShowDropdown(false) } },
                       { icon: '🥗', label: 'My Nutrition',    onClick: () => { router.push('/nutrition'); setShowDropdown(false) } },
                       { icon: '⚙️', label: 'Settings',        onClick: () => { router.push('/settings'); setShowDropdown(false) } },
                       { icon: '💎', label: 'Upgrade to Gold', onClick: () => { router.push('/upgrade'); setShowDropdown(false) } },

@@ -7,109 +7,96 @@ import { api } from '@/lib/api'
 
 const FONT      = 'var(--font-jakarta), Plus Jakarta Sans, sans-serif'
 const FONT_SYNE = 'var(--font-syne), Syne, sans-serif'
-const GOLD  = '#E6A700'
-const GREEN = '#16a34a'
-const DARK  = '#052e16'
+const GREEN      = '#16a34a'
+const GREEN_SOFT = '#f0fdf4'
+const GOLD       = '#E6A700'
+const GOLD_SOFT  = '#fdf3d6'
 
-type Member    = { id: string; name: string; username?: string; streak: number; isMe?: boolean; rank: number }
-type ReqItem   = { id: string; user: { id: string; name: string; username?: string } }
-type Badge     = { day: number; key: string; name: string; coins: number; unlocked: boolean; daysLeft: number }
-type DayCell   = { date: string; adherencePct: number; logged: number; planned: number }
-type LeagueMember = { id: string; name: string; username?: string; avatarUrl?: string; score: number; rank: number; meals: number; waterDays: number; isMe?: boolean }
+const DOW  = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
 
-const TIERS = [
-  { min: 0,   name: 'Rookie',     emoji: '🌱' },
-  { min: 7,   name: 'Consistent', emoji: '🔥' },
-  { min: 15,  name: 'Guardian',   emoji: '🛡️' },
-  { min: 31,  name: 'Champion',   emoji: '⚔️' },
-  { min: 91,  name: 'Elite',      emoji: '👑' },
-  { min: 181, name: 'Legend',     emoji: '🏆' },
-]
-const tierFor = (streak: number) => [...TIERS].reverse().find(t => streak >= t.min) || TIERS[0]
-const MEDAL = ['#E6B422', '#B8C0CC', '#CD8B5B']
+const BADGE_META: Record<string, { emoji: string; name: string; day: number }> = {
+  scout:    { emoji: '🌟', name: 'Scout',    day: 1   },
+  keeper:   { emoji: '🔥', name: 'Keeper',   day: 7   },
+  guardian: { emoji: '⚡', name: 'Guardian', day: 14  },
+  warrior:  { emoji: '🛡️', name: 'Warrior',  day: 30  },
+  champion: { emoji: '👑', name: 'Champion', day: 90  },
+  elite:    { emoji: '💎', name: 'Elite',    day: 180 },
+  legend:   { emoji: '🏆', name: 'Legend',   day: 365 },
+}
+const BADGE_ORDER = ['scout','keeper','guardian','warrior','champion','elite','legend']
 
-function AdherenceColor(pct: number) {
-  if (pct >= 80) return '#16a34a'
-  if (pct >= 50) return '#f59e0b'
-  if (pct > 0)   return '#f97316'
-  return '#e5e7eb'
+type Member = { id: string; name: string; username?: string; streak: number; isMe?: boolean; rank: number; avatarUrl?: string }
+type ReqItem = { id: string; user: { id: string; name: string; username?: string } }
+type Circle  = { id: string; name: string; code: string; memberCount: number }
+type CInvite = { id: string; circle: { id: string; name: string } }
+
+function Avatar({ name, avatarUrl, size = 40 }: { name?: string; avatarUrl?: string; size?: number }) {
+  if (avatarUrl) return <img src={avatarUrl} style={{ width: size, height: size, borderRadius: size / 2, objectFit: 'cover' }} alt="" />
+  return (
+    <div style={{ width: size, height: size, borderRadius: size / 2, background: GREEN_SOFT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: GREEN, fontSize: size * 0.4 }}>
+      {(name || '?').charAt(0).toUpperCase()}
+    </div>
+  )
 }
 
 export default function StreakPage() {
   const { user } = useAuth()
   const router = useRouter()
 
-  const [streak,      setStreak]      = useState<number | null>(null)
-  const [board,       setBoard]       = useState<Member[]>([])
+  const [loaded, setLoaded]         = useState(false)
+  const [streak, setStreak]         = useState<number>(0)
+  const [mealCoins, setMealCoins]   = useState<number>(0)
+  const [badges, setBadges]         = useState<any[]>([])
+  const [daily, setDaily]           = useState<any[]>([])
+  const [consistency, setConsistency] = useState<number>(0)
+  const [nextBadge, setNextBadge]   = useState<any>(null)
+
+  // Mates
+  const [board, setBoard]           = useState<Member[]>([])
   const [friendCount, setFriendCount] = useState(0)
-  const [requests,    setRequests]    = useState<ReqItem[]>([])
-  const [loaded,      setLoaded]      = useState(false)
+  const [requests, setRequests]     = useState<ReqItem[]>([])
+  const [q, setQ]                   = useState('')
+  const [results, setResults]       = useState<any[]>([])
+  const [searching, setSearching]   = useState(false)
+  const [statusMap, setStatusMap]   = useState<Record<string,string>>({})
 
-  // Coins + badges
-  const [coins,       setCoins]       = useState(0)
-  const [lifetimeEarned, setLifetimeEarned] = useState(0)
-  const [badges,      setBadges]      = useState<Badge[]>([])
-  const [justAwarded, setJustAwarded] = useState<{ name: string; coins: number }[]>([])
+  // Circles
+  const [circles, setCircles]         = useState<Circle[]>([])
+  const [circleInvites, setCircleInvites] = useState<CInvite[]>([])
+  const [activeCircle, setActiveCircle] = useState<string>('mates')
+  const [circleBoard, setCircleBoard]   = useState<Member[]>([])
+  const [circleBusy, setCircleBusy]     = useState(false)
 
-  // 7-day grid
-  const [weekGrid, setWeekGrid] = useState<DayCell[]>([])
-
-  // Weekly league
-  const [leagueBoard,     setLeagueBoard]     = useState<LeagueMember[]>([])
-  const [leagueMe,        setLeagueMe]        = useState<any>(null)
-  const [leagueResetDays, setLeagueResetDays] = useState(0)
-
-  // Active plans (for delete action)
-  const [plans,       setPlans]       = useState<any[]>([])
-  const [deletingId,  setDeletingId]  = useState<string | null>(null)
-  const [confirmDel,  setConfirmDel]  = useState<string | null>(null)
-
-  // Find Mates
-  const [q,         setQ]         = useState('')
-  const [results,   setResults]   = useState<any[]>([])
-  const [searching, setSearching] = useState(false)
-  const [statusMap, setStatusMap] = useState<Record<string, string>>({})
+  // Circle modals
+  const [createOpen, setCreateOpen] = useState(false)
+  const [createName, setCreateName] = useState('')
+  const [createBusy, setCreateBusy] = useState(false)
+  const [joinOpen, setJoinOpen]     = useState(false)
+  const [joinCode, setJoinCode]     = useState('')
+  const [joinBusy, setJoinBusy]     = useState(false)
+  const [circleMsg, setCircleMsg]   = useState('')
 
   const reload = useCallback(async () => {
-    const [st, lb, rq, cs, summary, plansRes, wl] = await Promise.all([
+    const [st, cs, an, lb, rq, ci, cir] = await Promise.all([
       api.getStreak().catch(() => null),
-      api.friendsLeaderboard().catch(() => null),
-      api.friendRequests().catch(() => null),
       api.getCoinStatus().catch(() => null),
       api.getAnalyticsSummary('week').catch(() => null),
-      api.getDietPlans().catch(() => null),
-      api.getWeeklyLeague().catch(() => null),
+      api.friendsLeaderboard().catch(() => null),
+      api.friendRequests().catch(() => null),
+      api.getCircleInvites().catch(() => null),
+      api.getMyCircles().catch(() => null),
     ])
-    setStreak(st?.streak ?? null)
+    setStreak(st?.streak ?? cs?.streak ?? 0)
+    setMealCoins(cs?.mealCoins ?? 0)
+    setBadges(cs?.badges || [])
+    setNextBadge(cs?.nextBadge ?? null)
+    setConsistency(an?.summary?.adherencePct ?? an?.summary?.consistency ?? 0)
+    setDaily(an?.dailyBreakdown || [])
     setBoard(lb?.leaderboard || [])
     setFriendCount(lb?.friendCount || 0)
     setRequests(rq?.requests || [])
-
-    const cd = cs?.data || cs || {}
-    setCoins(cd.mealCoins || 0)
-    setLifetimeEarned(cd.lifetimeEarned || 0)
-    setBadges(cd.badges || [])
-    setJustAwarded(cd.justAwarded || [])
-
-    // Build 7-day grid from daily breakdown
-    const breakdown: any[] = summary?.dailyBreakdown || summary?.data?.dailyBreakdown || []
-    // Fill missing days with zeros
-    const today = new Date()
-    const grid: DayCell[] = []
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(today); d.setDate(today.getDate() - i)
-      const iso = d.toISOString().slice(0, 10)
-      const found = breakdown.find((b: any) => b.date?.slice(0, 10) === iso)
-      grid.push({ date: iso, adherencePct: found?.adherencePct ?? 0, logged: found?.loggedMeals ?? 0, planned: found?.plannedMeals ?? 0 })
-    }
-    setWeekGrid(grid)
-
-    setPlans((plansRes?.plans || plansRes || []).filter((p: any) => p.isActive))
-
-    const wld = wl?.leaderboard || wl?.data?.leaderboard || []
-    setLeagueBoard(wld)
-    setLeagueMe(wl?.me || wl?.data?.me || null)
-    setLeagueResetDays(wl?.resetsInDays ?? wl?.data?.resetsInDays ?? 0)
+    setCircleInvites(ci?.invites || [])
+    setCircles(cir?.circles || [])
   }, [])
 
   useEffect(() => {
@@ -117,312 +104,254 @@ export default function StreakPage() {
     ;(async () => { try { await reload() } finally { setLoaded(true) } })()
   }, [user, reload, router])
 
+  // Switch circle leaderboard
+  useEffect(() => {
+    if (activeCircle === 'mates') { setCircleBoard([]); return }
+    setCircleBusy(true)
+    api.getCircleLeaderboard(activeCircle).catch(() => null).then(r => {
+      setCircleBoard(r?.members || [])
+    }).finally(() => setCircleBusy(false))
+  }, [activeCircle])
+
+  // Mate search
   useEffect(() => {
     if (q.trim().length < 2) { setResults([]); return }
-    let active = true
+    let alive = true
     setSearching(true)
-    const id = setTimeout(async () => {
-      try { const r = await api.searchUsers(q.trim()); if (active) setResults(r?.users || []) }
-      catch { if (active) setResults([]) }
-      finally { if (active) setSearching(false) }
+    const t = setTimeout(async () => {
+      try { const r = await api.searchUsers(q.trim()); if (alive) setResults(r?.users || []) }
+      catch { if (alive) setResults([]) }
+      finally { if (alive) setSearching(false) }
     }, 350)
-    return () => { active = false; clearTimeout(id) }
+    return () => { alive = false; clearTimeout(t) }
   }, [q])
 
-  const add = async (id: string) => {
+  const addFriend = async (id: string) => {
     try { const r = await api.sendFriendRequest(id); setStatusMap(m => ({ ...m, [id]: r?.status || 'requested' })); reload() } catch {}
   }
-  const respond = async (id: string, action: 'accept' | 'reject') => {
+  const respondFriend = async (id: string, action: 'accept' | 'reject') => {
     try { await api.respondFriend(id, action); reload() } catch {}
   }
-  const share = async () => {
-    const text = `I'm on a ${streak ?? 0}-day healthy-eating streak on MealWarden! 🔥`
-    try { if (navigator.share) await navigator.share({ text }); else { await navigator.clipboard.writeText(text); alert('Copied to clipboard!') } } catch {}
+  const respondCircle = async (inviteId: string, action: 'accept' | 'reject') => {
+    try { await api.respondCircleInvite(inviteId, action); reload() } catch {}
   }
-  const deletePlan = async (id: string) => {
-    setDeletingId(id)
-    try { await api.deleteDietPlan(id); setConfirmDel(null); reload() }
-    catch {} finally { setDeletingId(null) }
+  const doCreateCircle = async () => {
+    if (!createName.trim() || createBusy) return
+    setCreateBusy(true); setCircleMsg('')
+    try { await api.createCircle({ name: createName.trim() }); setCreateOpen(false); setCreateName(''); reload() }
+    catch (e: any) { setCircleMsg(e?.message || 'Failed to create circle.') }
+    finally { setCreateBusy(false) }
+  }
+  const doJoinCircle = async () => {
+    if (!joinCode.trim() || joinBusy) return
+    setJoinBusy(true); setCircleMsg('')
+    try { await api.joinCircle(joinCode.trim().toUpperCase()); setJoinOpen(false); setJoinCode(''); reload() }
+    catch (e: any) { setCircleMsg(e?.message || 'Invalid code or already a member.') }
+    finally { setJoinBusy(false) }
+  }
+
+  const share = async () => {
+    const text = `I'm on a ${streak}-day healthy-eating streak on MealWarden! 🔥`
+    try { if (navigator.share) await navigator.share({ text }); else { await navigator.clipboard.writeText(text); alert('Copied!') } } catch {}
   }
 
   if (!user || !loaded) return null
 
-  const days      = streak ?? 0
+  const currentBadgeKey = (() => {
+    for (let i = BADGE_ORDER.length - 1; i >= 0; i--) {
+      const key = BADGE_ORDER[i]
+      const b = badges.find(x => x.key === key)
+      if (b?.unlocked || streak >= (BADGE_META[key]?.day || 999)) return key
+    }
+    return null
+  })()
+
   const card: React.CSSProperties = { background: '#fff', borderRadius: 18, padding: 20, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }
-  const earned    = badges.filter(b => b.unlocked)
-  const upcoming  = badges.filter(b => !b.unlocked).slice(0, 4)
-  const weekDays  = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+  const renderLeaderboardRows = (list: Member[]) => list.map((m, i) => (
+    <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 6px', borderTop: i ? '1px solid #f1f5f9' : 'none', background: m.isMe ? GREEN_SOFT : 'transparent', borderRadius: m.isMe ? 10 : 0 }}>
+      <div style={{ width: 24, textAlign: 'center', fontWeight: 800, color: m.rank <= 3 ? GOLD : '#9ca3af' }}>{m.rank}</div>
+      <Avatar name={m.name} avatarUrl={m.avatarUrl} size={40} />
+      <div style={{ flex: 1 }}>
+        <div style={{ fontWeight: 700, color: m.isMe ? GREEN : '#111827', fontSize: 14 }}>{m.isMe ? `${m.name} (You)` : m.name}</div>
+        {m.username && <div style={{ fontSize: 12, color: '#9ca3af' }}>@{m.username}</div>}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontWeight: 800, color: '#111827' }}>{m.streak} <span style={{ color: GOLD }}>🔥</span></div>
+    </div>
+  ))
+
+  const displayBoard = activeCircle === 'mates' ? board : circleBoard
 
   return (
     <div style={{ minHeight: '100vh', background: '#f9fafb', fontFamily: FONT }}>
-      <div style={{ background: `linear-gradient(135deg,${DARK},${GREEN})`, padding: '40px 48px 56px' }}>
+
+      {/* Header */}
+      <div style={{ background: 'linear-gradient(135deg,#052e16,#16a34a)', padding: '40px 48px 56px' }}>
         <div style={{ maxWidth: 980, margin: '0 auto' }}>
-          <div onClick={() => router.push('/dashboard')} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: 'rgba(255,255,255,0.7)', fontSize: 14, cursor: 'pointer', marginBottom: 22, fontWeight: 500 }}>← Back to Dashboard</div>
-          <h1 style={{ fontFamily: FONT_SYNE, fontSize: 34, fontWeight: 800, color: '#fff', marginBottom: 8 }}>🔥 Your Streak</h1>
-          <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 15 }}>Keep logging meals to earn badges, stack Meal Coins, and climb the Mates leaderboard.</p>
+          <div onClick={() => router.push('/dashboard')} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: 'rgba(255,255,255,0.7)', fontSize: 14, cursor: 'pointer', marginBottom: 22, fontWeight: 500 }}>← Dashboard</div>
+          <h1 style={{ fontFamily: FONT_SYNE, fontSize: 34, fontWeight: 800, color: '#fff', marginBottom: 8 }}>🔥 Streak & Mates</h1>
+          <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 15 }}>Keep logging meals to build momentum — and climb the Mates leaderboard.</p>
         </div>
       </div>
 
-      <div style={{ maxWidth: 980, margin: '-32px auto 0', padding: '0 24px 64px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <div style={{ maxWidth: 980, margin: '-32px auto 0', padding: '0 24px 64px', display: 'flex', flexDirection: 'column', gap: 18 }}>
 
-        {/* Just awarded toast */}
-        {justAwarded.length > 0 && (
-          <div style={{ background: 'linear-gradient(135deg,#fef3c7,#fde68a)', border: '1.5px solid #fbbf24', borderRadius: 16, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontSize: 28 }}>🏅</span>
-            <div>
-              <div style={{ fontFamily: FONT_SYNE, fontWeight: 800, fontSize: 15, color: DARK }}>Badge{justAwarded.length > 1 ? 's' : ''} Unlocked!</div>
-              <div style={{ fontSize: 13, color: '#92400e' }}>{justAwarded.map(b => `${b.name} (+${b.coins} Coins)`).join(' · ')}</div>
-            </div>
+        {/* MealCoins bar */}
+        <div style={{ ...card, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', background: '#052e16', borderRadius: 18, padding: '16px 22px' }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', fontWeight: 700, letterSpacing: 1 }}>YOUR MEAL COINS</div>
+            <div style={{ fontFamily: FONT_SYNE, fontSize: 26, fontWeight: 800, color: '#fff', marginTop: 2 }}>🪙 {mealCoins.toLocaleString()}</div>
           </div>
-        )}
-
-        {/* Hero + 7-day grid side by side */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-
-          {/* Streak hero */}
-          <div style={{ ...card, textAlign: 'center', padding: '28px 20px' }}>
-            <div style={{ width: 100, height: 100, borderRadius: 56, background: '#fdf3d6', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', fontSize: 46 }}>🔥</div>
-            <div style={{ fontFamily: FONT_SYNE, fontSize: 42, fontWeight: 800, color: DARK }}>{days} {days === 1 ? 'Day' : 'Days'}</div>
-            <p style={{ color: '#6b7280', fontSize: 14, maxWidth: 300, margin: '8px auto 0', lineHeight: 1.6 }}>
-              {days > 0 ? `On fire, ${user?.name?.split(' ')[0] || 'there'}! Keep logging.` : `Log a meal today and your streak begins.`}
-            </p>
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 18, flexWrap: 'wrap' }}>
-              <button onClick={() => router.push('/dashboard')} style={{ background: GREEN, color: '#fff', border: 'none', borderRadius: 30, padding: '10px 20px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: FONT }}>Log Next Meal</button>
-              <button onClick={share} style={{ background: '#fdf3d6', color: GOLD, border: 'none', borderRadius: 30, padding: '10px 20px', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: FONT }}>Share 🔗</button>
-            </div>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button onClick={() => router.push('/coins')} style={{ padding: '9px 16px', background: GOLD, color: '#052e16', border: 'none', borderRadius: 10, fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: FONT }}>How to earn</button>
+            <button onClick={() => router.push('/coins')} style={{ padding: '9px 16px', background: 'rgba(255,255,255,0.12)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: FONT }}>Rewards →</button>
           </div>
+        </div>
 
-          {/* 7-day consistency grid */}
-          <div style={{ ...card }}>
-            <div style={{ fontFamily: FONT_SYNE, fontSize: 16, fontWeight: 800, color: DARK, marginBottom: 16 }}>7-Day Consistency</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 6 }}>
-              {weekGrid.map((day, i) => {
-                const d = new Date(day.date + 'T12:00:00')
-                const isToday = day.date === new Date().toISOString().slice(0, 10)
-                const color   = AdherenceColor(day.adherencePct)
-                return (
-                  <div key={i} style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: 10, color: '#9ca3af', marginBottom: 4, fontFamily: FONT }}>{weekDays[d.getDay()]}</div>
-                    <div title={`${day.date}: ${day.logged}/${day.planned} meals (${day.adherencePct}%)`} style={{
-                      width: '100%', aspectRatio: '1/1', borderRadius: 8,
-                      background: color,
-                      border: isToday ? `2px solid ${DARK}` : '2px solid transparent',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 11, fontWeight: 700, color: day.adherencePct > 0 ? '#fff' : '#9ca3af',
-                      cursor: 'default', transition: 'transform 0.15s ease',
-                    }}>
-                      {day.adherencePct > 0 ? `${day.adherencePct}%` : '–'}
-                    </div>
-                    <div style={{ fontSize: 9, color: '#9ca3af', marginTop: 3, fontFamily: FONT }}>{day.logged}/{day.planned}</div>
+        {/* Hero */}
+        <div style={{ ...card, textAlign: 'center', padding: '34px 24px' }}>
+          <div style={{ width: 110, height: 110, borderRadius: 60, background: GOLD_SOFT, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px', fontSize: 52 }}>🔥</div>
+          <div style={{ fontFamily: FONT_SYNE, fontSize: 44, fontWeight: 800, color: '#0a220e' }}>{streak} {streak === 1 ? 'Day' : 'Days'}</div>
+          <p style={{ color: '#6b7280', fontSize: 15, maxWidth: 460, margin: '8px auto 0', lineHeight: 1.6 }}>
+            {streak > 0 ? `You're on fire, ${user?.name?.split(' ')[0] || 'there'}! Keep logging your meals to keep the momentum.` : `Log a meal today and your streak begins.`}
+          </p>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 20, flexWrap: 'wrap' }}>
+            <button onClick={() => router.push('/dashboard')} style={{ background: GREEN, color: '#fff', border: 'none', borderRadius: 30, padding: '12px 22px', fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: FONT }}>Log Next Meal</button>
+            <button onClick={share} style={{ background: GOLD_SOFT, color: GOLD, border: 'none', borderRadius: 30, padding: '12px 24px', fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: FONT }}>Share</button>
+          </div>
+        </div>
+
+        {/* This Week grid */}
+        <div style={card}>
+          <div style={{ fontFamily: FONT_SYNE, fontSize: 17, fontWeight: 800, color: '#0a220e', marginBottom: 14 }}>This Week</div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {DOW.map((lbl, i) => {
+              const day = daily.find((x: any) => x.dow === i)
+              const logged = !!(day && day.logged > 0)
+              const active = !!(day && day.active)
+              return (
+                <div key={i} style={{ flex: 1, textAlign: 'center' }}>
+                  <div style={{ fontSize: 11, color: '#9ca3af', fontWeight: 700, marginBottom: 6 }}>{lbl[0]}</div>
+                  <div style={{ width: '100%', paddingBottom: '100%', borderRadius: 8, position: 'relative',
+                    background: logged ? GREEN : active ? '#fee2e2' : '#f3f4f6' }}>
+                    {logged && <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 14, fontWeight: 900 }}>✓</div>}
                   </div>
-                )
-              })}
-            </div>
-            <div style={{ display: 'flex', gap: 12, marginTop: 14, flexWrap: 'wrap' }}>
-              {[{ label: '≥80% Great', color: GREEN }, { label: '50–79% OK', color: '#f59e0b' }, { label: '1–49% Low', color: '#f97316' }, { label: '0% None', color: '#e5e7eb' }].map(l => (
-                <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <div style={{ width: 10, height: 10, borderRadius: 3, background: l.color }} />
-                  <span style={{ fontSize: 10, color: '#6b7280', fontFamily: FONT }}>{l.label}</span>
                 </div>
-              ))}
+              )
+            })}
+          </div>
+          <div style={{ display: 'flex', gap: 20, marginTop: 14 }}>
+            <div style={{ flex: 1, background: '#f9fafb', borderRadius: 12, padding: '12px 16px' }}>
+              <div style={{ fontSize: 11, color: '#9ca3af', fontWeight: 700, marginBottom: 2 }}>STREAK</div>
+              <div style={{ fontFamily: FONT_SYNE, fontSize: 22, fontWeight: 800, color: '#052e16' }}>{streak} <span style={{ fontSize: 14, color: '#9ca3af' }}>days</span></div>
+            </div>
+            <div style={{ flex: 1, background: '#f9fafb', borderRadius: 12, padding: '12px 16px' }}>
+              <div style={{ fontSize: 11, color: '#9ca3af', fontWeight: 700, marginBottom: 2 }}>CONSISTENCY</div>
+              <div style={{ fontFamily: FONT_SYNE, fontSize: 22, fontWeight: 800, color: '#052e16' }}>{consistency}<span style={{ fontSize: 14, color: '#9ca3af' }}>%</span></div>
             </div>
           </div>
         </div>
 
-        {/* Meal Coins */}
-        <div style={{ ...card, background: 'linear-gradient(135deg,#fef3c7,#fde68a)', border: '1.5px solid #fbbf24' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 10 }}>
-            <div>
-              <div style={{ fontFamily: FONT_SYNE, fontSize: 18, fontWeight: 800, color: DARK }}>🪙 Meal Coins</div>
-              <div style={{ fontSize: 13, color: '#78350f', marginTop: 2 }}>Earned by logging meals and hitting streak milestones</div>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontFamily: FONT_SYNE, fontSize: 30, fontWeight: 800, color: '#92400e' }}>{coins.toLocaleString()}</div>
-              <div style={{ fontSize: 12, color: '#a16207' }}>balance · {lifetimeEarned.toLocaleString()} earned lifetime</div>
-            </div>
-          </div>
-          {/* Coin bar: spent vs balance */}
-          {lifetimeEarned > 0 && (
-            <div>
-              <div style={{ height: 10, background: 'rgba(255,255,255,0.5)', borderRadius: 6, overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${Math.min(100, Math.round((coins / lifetimeEarned) * 100))}%`, background: GOLD, borderRadius: 6, transition: 'width 1s ease' }} />
+        {/* Badge journey */}
+        <div style={card}>
+          <div style={{ fontFamily: FONT_SYNE, fontSize: 17, fontWeight: 800, color: '#0a220e', marginBottom: 14 }}>Your Journey</div>
+          {nextBadge && (
+            <div style={{ background: GREEN, color: '#fff', borderRadius: 12, padding: '12px 16px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ flex: 1, fontSize: 13.5 }}>
+                {streak === 0 ? `Start today — a 1-day streak earns your first badge!` : `${nextBadge.daysLeft} more day${nextBadge.daysLeft === 1 ? '' : 's'} to unlock ${nextBadge.name}!`}
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
-                <span style={{ fontSize: 10, color: '#92400e', fontFamily: FONT }}>{Math.round((coins / lifetimeEarned) * 100)}% remaining</span>
-                <span style={{ fontSize: 10, color: '#92400e', fontFamily: FONT }}>{(lifetimeEarned - coins).toLocaleString()} spent</span>
-              </div>
+              <div style={{ fontSize: 22 }}>⭐</div>
             </div>
           )}
-        </div>
-
-        {/* Badge Carousel */}
-        <div>
-          <div style={{ fontFamily: FONT_SYNE, fontSize: 20, fontWeight: 800, color: DARK, marginBottom: 14 }}>🏅 Streak Badges</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px,1fr))', gap: 12 }}>
-            {[...earned, ...upcoming].map(b => (
-              <div key={b.key} style={{
-                ...card, padding: '18px 14px', textAlign: 'center',
-                opacity: b.unlocked ? 1 : 0.55,
-                border: b.unlocked ? `2px solid ${GOLD}` : '2px solid #e5e7eb',
-                background: b.unlocked ? '#fffbeb' : '#f9fafb',
-                position: 'relative',
-              }}>
-                {b.unlocked && <div style={{ position: 'absolute', top: 8, right: 8, fontSize: 10, background: GOLD, color: '#fff', borderRadius: 100, padding: '2px 6px', fontWeight: 700 }}>+{b.coins}</div>}
-                <div style={{ fontSize: 30, marginBottom: 6 }}>{b.unlocked ? '🏅' : '🔒'}</div>
-                <div style={{ fontFamily: FONT_SYNE, fontSize: 13, fontWeight: 800, color: DARK, marginBottom: 2 }}>{b.name}</div>
-                <div style={{ fontSize: 11, color: b.unlocked ? GOLD : '#9ca3af' }}>
-                  {b.unlocked ? `Earned · ${b.day}d` : `${b.daysLeft} day${b.daysLeft === 1 ? '' : 's'} left`}
+          <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 8 }}>
+            {BADGE_ORDER.map(key => {
+              const meta = BADGE_META[key]
+              const apiB = badges.find((b: any) => b.key === key)
+              const unlocked = apiB ? apiB.unlocked : streak >= meta.day
+              const isCurrent = key === currentBadgeKey
+              return (
+                <div key={key} style={{ flexShrink: 0, width: 90, textAlign: 'center', padding: '12px 8px', background: isCurrent ? GREEN_SOFT : '#f9fafb', border: `2px solid ${isCurrent ? GREEN : '#e5e7eb'}`, borderRadius: 14 }}>
+                  <div style={{ fontSize: 28, filter: unlocked ? 'none' : 'grayscale(1)', opacity: unlocked ? 1 : 0.35 }}>{meta.emoji}</div>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: isCurrent ? GREEN : unlocked ? '#052e16' : '#9ca3af', marginTop: 5 }}>{meta.name}</div>
+                  <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 2 }}>Day {meta.day}</div>
+                  {!unlocked && !isCurrent && <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 3 }}>{Math.max(0, meta.day - streak)}d left</div>}
+                  {isCurrent && <div style={{ fontSize: 10, background: GREEN, color: '#fff', borderRadius: 99, padding: '2px 6px', marginTop: 4, fontWeight: 700 }}>Now</div>}
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
+          <button onClick={() => router.push('/coins')} style={{ marginTop: 12, width: '100%', padding: '11px', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: FONT, color: '#374151' }}>🪙 View Coin Center & Rewards →</button>
         </div>
 
-        {/* Weekly League */}
+        {/* Circles */}
         <div>
-          <div style={{ marginBottom: 14 }}>
-            <div style={{ fontFamily: FONT_SYNE, fontSize: 20, fontWeight: 800, color: DARK }}>🏆 Weekly League</div>
-            <div style={{ fontSize: 13, color: '#6b7280', marginTop: 3 }}>Earn points every meal · resets Monday · climb the ranks</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 800, color: GOLD, letterSpacing: 1.5 }}>MEALWARDEN</div>
+              <div style={{ fontFamily: FONT_SYNE, fontSize: 20, fontWeight: 800, color: '#0a220e' }}>Circles & Mates</div>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => { setCreateOpen(true); setCircleMsg('') }} style={{ padding: '9px 14px', background: GREEN, color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: FONT }}>+ Create Circle</button>
+              <button onClick={() => { setJoinOpen(true); setCircleMsg('') }} style={{ padding: '9px 14px', background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: FONT }}>Join Circle</button>
+            </div>
           </div>
 
-          {/* Tier hero */}
-          <div style={{ background: `linear-gradient(135deg,${DARK},${GREEN})`, borderRadius: 18, padding: '20px 24px', marginBottom: 14, color: '#fff' }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)', borderRadius: 100, padding: '6px 14px', marginBottom: 16 }}>
-              <span style={{ fontSize: 15 }}>{tierFor(days).emoji}</span>
-              <span style={{ fontWeight: 900, fontSize: 13 }}>{tierFor(days).name} League</span>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 0 }}>
-              {[
-                { label: 'Your Score', value: leagueMe ? leagueMe.score : 0 },
-                { label: `Rank`, value: leagueMe ? `#${leagueMe.rank}` : '—' },
-                { label: 'Resets In', value: `${leagueResetDays}d` },
-              ].map((s, i) => (
-                <div key={s.label} style={{ textAlign: 'center', borderLeft: i ? '1px solid rgba(255,255,255,0.2)' : 'none' }}>
-                  <div style={{ fontFamily: FONT_SYNE, fontSize: 26, fontWeight: 900 }}>{s.value}</div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.75)', marginTop: 3 }}>{s.label}</div>
+          {/* Circle invites */}
+          {circleInvites.length > 0 && (
+            <div style={{ ...card, marginBottom: 12, border: `1.5px solid ${GREEN}33` }}>
+              <div style={{ fontWeight: 800, fontSize: 14, color: '#052e16', marginBottom: 10 }}>Circle Invites ({circleInvites.length})</div>
+              {circleInvites.map((inv, i) => (
+                <div key={inv.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderTop: i ? '1px solid #f1f5f9' : 'none' }}>
+                  <div style={{ flex: 1, fontWeight: 600, fontSize: 14 }}>📍 {inv.circle?.name}</div>
+                  <button onClick={() => respondCircle(inv.id, 'reject')} style={{ background: '#fef2f2', color: '#ef4444', border: 'none', borderRadius: 8, padding: '7px 11px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>✕</button>
+                  <button onClick={() => respondCircle(inv.id, 'accept')} style={{ background: GREEN, color: '#fff', border: 'none', borderRadius: 20, padding: '7px 14px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>Join</button>
                 </div>
               ))}
             </div>
+          )}
+
+          {/* Board selector tabs */}
+          <div style={{ display: 'flex', gap: 8, marginBottom: 12, overflowX: 'auto', paddingBottom: 4 }}>
+            <button onClick={() => setActiveCircle('mates')} style={{ padding: '8px 16px', border: `2px solid ${activeCircle === 'mates' ? GREEN : '#e5e7eb'}`, background: activeCircle === 'mates' ? GREEN_SOFT : '#fff', color: activeCircle === 'mates' ? GREEN : '#374151', borderRadius: 99, fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: FONT, whiteSpace: 'nowrap' }}>👥 Mates</button>
+            {circles.map(c => (
+              <button key={c.id} onClick={() => setActiveCircle(c.id)} style={{ padding: '8px 16px', border: `2px solid ${activeCircle === c.id ? GREEN : '#e5e7eb'}`, background: activeCircle === c.id ? GREEN_SOFT : '#fff', color: activeCircle === c.id ? GREEN : '#374151', borderRadius: 99, fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: FONT, whiteSpace: 'nowrap' }}>📍 {c.name}</button>
+            ))}
           </div>
 
           <div style={card}>
-            {/* Tier ladder */}
-            <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
-              {TIERS.map(t => {
-                const active = tierFor(days).name === t.name
-                return (
-                  <div key={t.name} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 20, background: active ? '#052e16' : '#f3f4f6', border: active ? 'none' : '1px solid #e5e7eb' }}>
-                    <span style={{ fontSize: 13 }}>{t.emoji}</span>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: active ? '#fff' : '#6b7280' }}>{t.name}</span>
-                    <span style={{ fontSize: 10, color: active ? 'rgba(255,255,255,0.6)' : '#d1d5db' }}>{t.min}+d</span>
+            {circleBusy ? (
+              <div style={{ textAlign: 'center', padding: '24px', color: '#9ca3af' }}>Loading…</div>
+            ) : displayBoard.length > 0 ? renderLeaderboardRows(displayBoard) : (
+              <div style={{ textAlign: 'center', padding: '20px 12px' }}>
+                <div style={{ fontWeight: 800, color: '#111827', marginBottom: 6 }}>
+                  {activeCircle === 'mates' ? 'Compete with your MealWarden Mates' : 'No members yet'}
+                </div>
+                <div style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.6 }}>
+                  {activeCircle === 'mates' ? 'Find mates below and your streaks line up here.' : 'Share your circle code to invite members.'}
+                </div>
+                {activeCircle !== 'mates' && (
+                  <div style={{ marginTop: 10, background: '#f9fafb', borderRadius: 10, padding: '10px 14px', display: 'inline-block' }}>
+                    Code: <strong>{circles.find(c => c.id === activeCircle)?.code || '—'}</strong>
                   </div>
-                )
-              })}
-            </div>
-
-            {leagueBoard.length <= 1 ? (
-              <div style={{ textAlign: 'center', padding: '24px 12px', borderTop: '1px solid #f1f5f9' }}>
-                <div style={{ fontSize: 32, marginBottom: 10 }}>🏁</div>
-                <div style={{ fontWeight: 800, color: DARK, marginBottom: 6 }}>Race your mates this week</div>
-                <div style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.7 }}>Add MealWarden Mates below and your scores appear here. Each meal +10 pts, water goal +5 pts. Resets every Monday.</div>
-              </div>
-            ) : leagueBoard.map((m, i) => (
-              <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 8px', borderTop: i ? '1px solid #f1f5f9' : 'none', background: m.isMe ? '#f0fdf4' : 'transparent', borderRadius: m.isMe ? 10 : 0 }}>
-                <div style={{ width: 26, height: 26, borderRadius: 13, background: m.rank <= 3 ? MEDAL[m.rank - 1] : '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 12, color: m.rank <= 3 ? '#1A130A' : '#6b7280' }}>
-                  {m.rank}
-                </div>
-                <div style={{ width: 38, height: 38, borderRadius: 20, background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: GREEN, fontSize: 15 }}>
-                  {(m.name || '?').charAt(0).toUpperCase()}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 700, color: m.isMe ? GREEN : '#111827', fontSize: 14 }}>{m.isMe ? `${m.name} (You)` : m.name}</div>
-                  <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>{m.meals} meals · {m.waterDays} water days</div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontFamily: FONT_SYNE, fontSize: 17, fontWeight: 900, color: m.isMe ? GREEN : '#111827' }}>{m.score}</div>
-                  <div style={{ fontSize: 10, color: '#9ca3af' }}>pts</div>
-                </div>
-              </div>
-            ))}
-
-            <div style={{ marginTop: 14, background: '#f9fafb', borderRadius: 10, padding: '10px 14px', border: '1px solid #e5e7eb', textAlign: 'center' }}>
-              <span style={{ fontSize: 12, fontWeight: 700, color: '#6b7280' }}>Earn points · meal logged <strong style={{ color: GOLD }}>+10</strong> &nbsp; water goal <strong style={{ color: GOLD }}>+5</strong></span>
-            </div>
-          </div>
-        </div>
-
-        {/* Active plan management */}
-        {plans.length > 0 && (
-          <div>
-            <div style={{ fontFamily: FONT_SYNE, fontSize: 18, fontWeight: 800, color: DARK, marginBottom: 12 }}>📋 Active Plans</div>
-            <div style={card}>
-              {plans.map((p: any, i: number) => (
-                <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 4px', borderTop: i ? '1px solid #f1f5f9' : 'none' }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700, fontSize: 14, color: DARK }}>{p.name || p.dayName || `Plan ${i + 1}`}</div>
-                    <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>
-                      Active since {p.activatedAt ? new Date(p.activatedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'}
-                    </div>
-                  </div>
-                  {confirmDel === p.id ? (
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <button onClick={() => setConfirmDel(null)} style={{ padding: '7px 12px', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: FONT, color: '#6b7280' }}>Cancel</button>
-                      <button onClick={() => deletePlan(p.id)} disabled={deletingId === p.id} style={{ padding: '7px 14px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: FONT, color: '#ef4444' }}>
-                        {deletingId === p.id ? 'Deleting…' : '⚠️ Confirm Delete'}
-                      </button>
-                    </div>
-                  ) : (
-                    <button onClick={() => setConfirmDel(p.id)} style={{ padding: '7px 14px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: FONT, color: '#ef4444' }}>
-                      🗑 Delete Plan
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Mates leaderboard */}
-        <div>
-          <div style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: GOLD, letterSpacing: 1.5 }}>MEALWARDEN</div>
-            <div style={{ fontFamily: FONT_SYNE, fontSize: 22, fontWeight: 800, color: DARK }}>Mates Leaderboard</div>
-          </div>
-          <div style={card}>
-            {board.map((m, i) => (
-              <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 6px', borderTop: i ? '1px solid #f1f5f9' : 'none', background: m.isMe ? '#f0fdf4' : 'transparent', borderRadius: m.isMe ? 10 : 0 }}>
-                <div style={{ width: 24, textAlign: 'center', fontWeight: 800, color: m.rank <= 3 ? GOLD : '#9ca3af' }}>{m.rank}</div>
-                <div style={{ width: 38, height: 38, borderRadius: 20, background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: GREEN }}>{(m.name || '?').charAt(0).toUpperCase()}</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 700, color: m.isMe ? GREEN : '#111827', fontSize: 14 }}>{m.isMe ? `${m.name} (You)` : m.name}</div>
-                  {m.username && <div style={{ fontSize: 12, color: '#9ca3af' }}>@{m.username}</div>}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontWeight: 800, color: '#111827' }}>{m.streak} <span style={{ color: GOLD }}>🔥</span></div>
-              </div>
-            ))}
-            {friendCount === 0 && (
-              <div style={{ textAlign: 'center', padding: '20px 12px', borderTop: '1px solid #f1f5f9', marginTop: 6 }}>
-                <div style={{ fontWeight: 800, color: '#111827', marginBottom: 6 }}>Compete with your MealWarden Mates</div>
-                <div style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.6 }}>Add mates below and your streaks line up here.</div>
+                )}
               </div>
             )}
           </div>
         </div>
 
-        {/* Requests */}
+        {/* Mate Requests */}
         {requests.length > 0 && (
           <div>
-            <div style={{ fontFamily: FONT_SYNE, fontSize: 18, fontWeight: 800, color: DARK, marginBottom: 10 }}>Mate Requests ({requests.length})</div>
+            <div style={{ fontFamily: FONT_SYNE, fontSize: 18, fontWeight: 800, color: '#0a220e', marginBottom: 10 }}>Mate Requests ({requests.length})</div>
             <div style={card}>
               {requests.map((r, i) => (
                 <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 4px', borderTop: i ? '1px solid #f1f5f9' : 'none' }}>
-                  <div style={{ width: 38, height: 38, borderRadius: 20, background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: GREEN }}>{(r.user?.name || '?').charAt(0).toUpperCase()}</div>
+                  <Avatar name={r.user?.name} size={38} />
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 700, fontSize: 14 }}>{r.user?.name}</div>
                     {r.user?.username && <div style={{ fontSize: 12, color: '#9ca3af' }}>@{r.user.username}</div>}
                   </div>
-                  <button onClick={() => respond(r.id, 'reject')} style={{ background: '#fef2f2', color: '#ef4444', border: 'none', borderRadius: 10, padding: '8px 12px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>✕</button>
-                  <button onClick={() => respond(r.id, 'accept')} style={{ background: GREEN, color: '#fff', border: 'none', borderRadius: 20, padding: '8px 16px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>Accept</button>
+                  <button onClick={() => respondFriend(r.id, 'reject')} style={{ background: '#fef2f2', color: '#ef4444', border: 'none', borderRadius: 10, padding: '8px 12px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>✕</button>
+                  <button onClick={() => respondFriend(r.id, 'accept')} style={{ background: GREEN, color: '#fff', border: 'none', borderRadius: 20, padding: '8px 16px', fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>Accept</button>
                 </div>
               ))}
             </div>
@@ -431,17 +360,13 @@ export default function StreakPage() {
 
         {/* Find Mates */}
         <div>
-          <div style={{ fontFamily: FONT_SYNE, fontSize: 18, fontWeight: 800, color: DARK, marginBottom: 10 }}>Find Mates</div>
+          <div style={{ fontFamily: FONT_SYNE, fontSize: 18, fontWeight: 800, color: '#0a220e', marginBottom: 10 }}>Find Mates</div>
           <div style={card}>
-            <input
-              value={q}
-              onChange={e => setQ(e.target.value)}
-              placeholder="Search by username, email or phone"
-              style={{ width: '100%', boxSizing: 'border-box', background: '#f3f4f6', border: '1.5px solid #e5e7eb', borderRadius: 12, padding: '12px 14px', fontSize: 15, fontFamily: FONT, outline: 'none' }}
-            />
+            <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search by username, email or phone"
+              style={{ width: '100%', boxSizing: 'border-box', background: '#f3f4f6', border: '1.5px solid #e5e7eb', borderRadius: 12, padding: '12px 14px', fontSize: 15, fontFamily: FONT, outline: 'none' }} />
             <div style={{ marginTop: 8 }}>
               {q.trim().length < 2 ? (
-                <div style={{ color: '#9ca3af', fontSize: 13, padding: '14px 2px' }}>Type at least 2 characters (username, email or phone).</div>
+                <div style={{ color: '#9ca3af', fontSize: 13, padding: '14px 2px' }}>Type at least 2 characters.</div>
               ) : searching ? (
                 <div style={{ color: '#9ca3af', fontSize: 13, padding: '14px 2px' }}>Searching…</div>
               ) : results.length === 0 ? (
@@ -452,20 +377,53 @@ export default function StreakPage() {
                 const disabled = st === 'requested' || st === 'friends'
                 return (
                   <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 2px', borderTop: '1px solid #f1f5f9' }}>
-                    <div style={{ width: 36, height: 36, borderRadius: 20, background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: GREEN }}>{(u.name || '?').charAt(0).toUpperCase()}</div>
+                    <Avatar name={u.name} avatarUrl={u.avatarUrl} size={36} />
                     <div style={{ flex: 1 }}>
                       <div style={{ fontWeight: 700, fontSize: 14 }}>{u.name}</div>
                       {u.username && <div style={{ fontSize: 12, color: '#9ca3af' }}>@{u.username}</div>}
                     </div>
-                    <button onClick={() => !disabled && add(u.id)} disabled={disabled} style={{ background: disabled ? '#f3f4f6' : GREEN, color: disabled ? '#6b7280' : '#fff', border: 'none', borderRadius: 20, padding: '8px 16px', fontWeight: 700, cursor: disabled ? 'default' : 'pointer', fontFamily: FONT }}>{label}</button>
+                    <button onClick={() => !disabled && addFriend(u.id)} disabled={disabled} style={{ background: disabled ? '#f3f4f6' : GREEN, color: disabled ? '#6b7280' : '#fff', border: 'none', borderRadius: 20, padding: '8px 16px', fontWeight: 700, cursor: disabled ? 'default' : 'pointer', fontFamily: FONT }}>{label}</button>
                   </div>
                 )
               })}
             </div>
           </div>
         </div>
-
       </div>
+
+      {/* Create Circle Modal */}
+      {createOpen && (
+        <>
+          <div onClick={() => setCreateOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(5,46,22,0.6)', backdropFilter: 'blur(8px)', zIndex: 1000 }} />
+          <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 1001, width: '100%', maxWidth: 400, background: '#fff', borderRadius: 24, padding: 28, fontFamily: FONT }}>
+            <div style={{ fontFamily: FONT_SYNE, fontSize: 20, fontWeight: 800, color: '#052e16', marginBottom: 16 }}>📍 Create a Circle</div>
+            <input value={createName} onChange={e => setCreateName(e.target.value)} placeholder="Circle name (e.g. Family, Office, Gym buds)" maxLength={40}
+              style={{ width: '100%', boxSizing: 'border-box', background: '#f9fafb', border: '1.5px solid #e5e7eb', borderRadius: 10, padding: '12px 14px', fontSize: 14, fontFamily: FONT, outline: 'none', marginBottom: 12 }} />
+            {circleMsg && <div style={{ color: '#ef4444', fontSize: 13, marginBottom: 10 }}>{circleMsg}</div>}
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => setCreateOpen(false)} style={{ flex: 1, padding: '12px', background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: 10, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>Cancel</button>
+              <button onClick={doCreateCircle} disabled={createBusy || !createName.trim()} style={{ flex: 1, padding: '12px', background: createBusy || !createName.trim() ? '#9ca3af' : GREEN, color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>{createBusy ? 'Creating…' : 'Create'}</button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Join Circle Modal */}
+      {joinOpen && (
+        <>
+          <div onClick={() => setJoinOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(5,46,22,0.6)', backdropFilter: 'blur(8px)', zIndex: 1000 }} />
+          <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 1001, width: '100%', maxWidth: 400, background: '#fff', borderRadius: 24, padding: 28, fontFamily: FONT }}>
+            <div style={{ fontFamily: FONT_SYNE, fontSize: 20, fontWeight: 800, color: '#052e16', marginBottom: 16 }}>🔑 Join a Circle</div>
+            <input value={joinCode} onChange={e => setJoinCode(e.target.value)} placeholder="Enter circle code" maxLength={12}
+              style={{ width: '100%', boxSizing: 'border-box', background: '#f9fafb', border: '1.5px solid #e5e7eb', borderRadius: 10, padding: '12px 14px', fontSize: 14, fontFamily: FONT, outline: 'none', textTransform: 'uppercase', marginBottom: 12 }} />
+            {circleMsg && <div style={{ color: '#ef4444', fontSize: 13, marginBottom: 10 }}>{circleMsg}</div>}
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => setJoinOpen(false)} style={{ flex: 1, padding: '12px', background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: 10, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>Cancel</button>
+              <button onClick={doJoinCircle} disabled={joinBusy || !joinCode.trim()} style={{ flex: 1, padding: '12px', background: joinBusy || !joinCode.trim() ? '#9ca3af' : GREEN, color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>{joinBusy ? 'Joining…' : 'Join'}</button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }

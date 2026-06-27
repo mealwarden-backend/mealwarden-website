@@ -21,13 +21,13 @@ const BOT_RESPONSES: Record<string, string> = {
   'good evening': 'Good evening! 🌙 What can I help you with?',
 
   // Pricing
-  'free':     'Every new account starts with a **30-day free Gold trial** — all features unlocked, no card needed. After that you can stay on a functional Free plan or upgrade. 🎉',
-  'price':    'MealWarden plans (₹/month):\n\n🆓 **Free** — ₹0\n🥈 **Silver** — ₹149\n⭐ **Premium** — ₹299\n✦ **Gold** — ₹699\n\nEvery account starts with a 30-day Gold trial!',
+  'free':     'Every new account starts with a **14-day free Gold trial** — all features unlocked, no card needed. After that you can stay on a functional Free plan or upgrade. 🎉',
+  'price':    'MealWarden plans (₹/month):\n\n🆓 **Free** — ₹0\n🥈 **Silver** — ₹149\n⭐ **Premium** — ₹299\n✦ **Gold** — ₹699\n\nEvery account starts with a 14-day Gold trial!',
   'pricing':  'Our plans (₹/month):\n\n🆓 **Free** — ₹0\n🥈 **Silver** — ₹149\n⭐ **Premium** — ₹299 (most popular)\n✦ **Gold** — ₹699\n\nAnnual billing saves 33%.',
   'premium':  '⭐ **Premium** (₹299/month) includes:\n• Everything in Silver\n• Meal Scan — AI calories from a photo\n• Smart grocery lists\n• Priority guardian replies',
   'gold':     '✦ **Gold** (₹699/month) includes:\n• Everything in Premium\n• Wearable & step sync\n• AI meal swaps\n• Create your own guardian\n• Priority support',
   'silver':   '🥈 **Silver** (₹149/month) includes:\n• Everything in Free\n• Unlimited diet plans\n• Full recipes & prep tasks\n• Progress analytics',
-  'cost':     'MealWarden starts with a 30-day free Gold trial. Paid plans: Silver ₹149, Premium ₹299, Gold ₹699 per month (annual saves 33%).',
+  'cost':     'MealWarden starts with a 14-day free Gold trial. Paid plans: Silver ₹149, Premium ₹299, Gold ₹699 per month (annual saves 33%).',
   'discount': 'Yes! Annual billing saves 33% on all paid plans. 🎉',
   'cancel':   'You can cancel anytime — no questions asked, no penalties. Your access continues until the end of your billing period.',
 
@@ -45,7 +45,7 @@ const BOT_RESPONSES: Record<string, string> = {
   // Guardians
   'meenu':    '👩 **Meenu** is your warm, caring guardian — gentle reminders, encouraging notes, and recipes made simple.',
   'maddy':    '👨 **Maddy** is your bold, focused guardian — direct nudges, no-nonsense plans, and real accountability.',
-  'voice':    '🎙️ Natural **voice conversations** with your guardian are coming soon. Today you can chat with Meenu or Maddy by text.',
+  'voice':    '🎙️ Your guardian supports **voice replies** in the MealWarden app — tap the speaker icon on any message to hear their response read aloud. On the web you can also enable the speaker button in this chat.',
   'guardian': 'Your guardian watches over your nutrition every day — reminders, recipes and nutrition help. Pick warm **Meenu** or focused **Maddy**; Gold members can create their own.',
 
   // Technical
@@ -69,7 +69,7 @@ const BOT_RESPONSES: Record<string, string> = {
   'refund':   '↩️ We offer a hassle-free cancellation — cancel anytime and you keep access until end of billing period. Contact support for refund queries.',
 
   // About
-  'about':    '🛡️ MealWarden is the world\'s first diet plan reader. Upload any diet plan and your AI guardian reads it, schedules your week, sends smart reminders, scans meals, and keeps you consistent.',
+  'about':    '🛡️ MealWarden is one of the world\'s first diet plan readers. Upload any diet plan and your AI guardian reads it, schedules your week, sends smart reminders, scans meals, and keeps you consistent.',
   'mealwarden': '🛡️ MealWarden is your intelligent meal guardian. We read your diet plan, send smart reminders, scan meals with AI, and keep you accountable 24/7!',
   'india':    '🌍 MealWarden works for anyone, anywhere — any cuisine, any goal. We\'re proudly made by a team in India 🇮🇳, building for the whole world.',
 
@@ -116,8 +116,20 @@ export default function ChatBot({ isOpen, onClose }: ChatBotProps) {
   ])
   const [input, setInput]         = useState('')
   const [typing, setTyping]       = useState(false)
+  const [ttsEnabled, setTtsEnabled] = useState(false)
+  const utterRef                    = useRef<SpeechSynthesisUtterance | null>(null)
   const bottomRef                 = useRef<HTMLDivElement>(null)
   const inputRef                  = useRef<HTMLInputElement>(null)
+
+  const speak = (text: string) => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return
+    window.speechSynthesis.cancel()
+    const plain = text.replace(/\*\*/g, '').replace(/\*/g, '').replace(/\n/g, ' ')
+    const utt = new SpeechSynthesisUtterance(plain)
+    utt.rate = 1.05; utt.pitch = 1.1; utt.volume = 1
+    utterRef.current = utt
+    window.speechSynthesis.speak(utt)
+  }
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -147,6 +159,7 @@ export default function ChatBot({ isOpen, onClose }: ChatBotProps) {
         .then((res: any) => {
           const answer = res?.answer || res?.reply || 'Sorry, I couldn\'t reach your guardian just now. Please try again.'
           setMessages(prev => [...prev, { from: 'bot', text: answer, time: getTime() }])
+          if (ttsEnabled) speak(answer)
         })
         .catch(() => {
           setMessages(prev => [...prev, { from: 'bot', text: 'Sorry, I couldn\'t reach your guardian just now. Please try again.', time: getTime() }])
@@ -157,7 +170,9 @@ export default function ChatBot({ isOpen, onClose }: ChatBotProps) {
 
     // Logged-out visitors get the quick FAQ assistant.
     setTimeout(() => {
-      setMessages(prev => [...prev, { from: 'bot', text: getBotResponse(text), time: getTime() }])
+      const reply = getBotResponse(text)
+      setMessages(prev => [...prev, { from: 'bot', text: reply, time: getTime() }])
+      if (ttsEnabled) speak(reply)
       setTyping(false)
     }, 900 + Math.random() * 600)
   }
@@ -241,6 +256,18 @@ export default function ChatBot({ isOpen, onClose }: ChatBotProps) {
               justifyContent: 'center', padding: 0, lineHeight: 1,
             }}
           >×</button>
+          <button
+            onClick={() => { setTtsEnabled(v => !v); if (ttsEnabled && window.speechSynthesis) window.speechSynthesis.cancel() }}
+            title={ttsEnabled ? 'Mute voice' : 'Enable voice replies'}
+            style={{
+              width: 30, height: 30, borderRadius: '50%',
+              background: ttsEnabled ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.15)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              color: ttsEnabled ? '#16a34a' : '#fff', fontSize: 14, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              padding: 0, lineHeight: 1, marginLeft: 4,
+            }}
+          >🔊</button>
         </div>
 
         {/* Messages */}

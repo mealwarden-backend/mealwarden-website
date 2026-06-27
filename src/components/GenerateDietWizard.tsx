@@ -253,15 +253,23 @@ export default function GenerateDietWizard({ guardianName, profile, onClose }: {
                 <Chip active={otherOn} onClick={() => setOtherOn(o => !o)}>Other</Chip>
               </div>
               {otherOn && <input value={otherText} onChange={e => setOther(e.target.value)} placeholder="Type condition(s), comma separated" style={{ ...inputBox, marginTop: 10 }} />}
-              <div onClick={() => setReport(true)} style={{ border: '1.5px dashed #c4b5fd', borderRadius: 12, padding: '14px 16px', background: '#faf5ff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, marginTop: 12 }}>
+              <div onClick={() => setReport(v => !v)} style={{ border: '1.5px dashed #c4b5fd', borderRadius: 12, padding: '14px 16px', background: '#faf5ff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, marginTop: 12 }}>
                 <span style={{ fontSize: 22 }}>📄</span>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 13.5, fontWeight: 700, color: '#6d28d9' }}>Upload a health report</div>
                   <div style={{ fontSize: 12, color: '#9ca3af' }}>PDF or Word — {guardianName} will tailor your plan to it</div>
                 </div>
-                <span style={{ fontSize: 11, fontWeight: 800, color: '#a855f7', background: '#f3e8ff', border: '1px solid #e9d5ff', borderRadius: 100, padding: '4px 10px' }}>SOON</span>
+                <span style={{ fontSize: 11, fontWeight: 800, color: '#16a34a', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 100, padding: '4px 10px' }}>In app</span>
               </div>
-              {reportSoon && <p style={{ fontSize: 12, color: '#7c3aed', marginTop: 8, fontWeight: 600 }}>🚀 Reading health reports is coming soon — pick conditions above for now and your plan will respect them.</p>}
+              {reportSoon && (
+                <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '12px 14px', marginTop: 8, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                  <span style={{ fontSize: 16, flexShrink: 0 }}>📱</span>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#16a34a', marginBottom: 3 }}>Available in the MealWarden app</div>
+                    <div style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.6 }}>Upload your blood reports, BMI charts or doctor&apos;s notes in the app and {guardianName} will read them and automatically select the right conditions below. For now, pick conditions manually.</div>
+                  </div>
+                </div>
+              )}
               <label style={label}>Allergies / foods to avoid <span style={{ color: '#9ca3af', fontWeight: 500 }}>· optional</span></label>
               <input value={allergies} onChange={e => setAllerg(e.target.value)} placeholder="e.g. peanuts, lactose, no mushrooms" style={inputBox} />
             </>

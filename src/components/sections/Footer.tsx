@@ -77,7 +77,7 @@ export default function Footer() {
             </div>
 
             <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.55)', lineHeight: 1.8, marginBottom: 24, fontFamily: FONT }}>
-              The world's first diet plan reader. Upload any plan, get smart reminders, and stay consistent — forever.
+              <em style={{ fontStyle: 'italic', fontSize: '0.9em', fontFamily: 'Georgia, serif' }}>One of</em> the world&apos;s first diet plan readers. Upload any plan, get smart reminders, and stay consistent — forever.
             </p>
 
             {/* Tagline badge */}

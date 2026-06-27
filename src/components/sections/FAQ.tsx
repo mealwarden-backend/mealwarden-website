@@ -6,7 +6,7 @@ import ChatBot from '@/components/ChatBot'
 const faqs = [
   {
     q: 'Is MealWarden free to use?',
-    a: 'Every new account starts with a 30-day free Gold trial — all features unlocked, no credit card needed. After the trial you can continue on a functional Free plan or upgrade to a paid plan.',
+    a: 'Every new account starts with a 14-day free Gold trial — all features unlocked, no credit card needed. After the trial you can continue on a functional Free plan or upgrade to a paid plan.',
   },
   {
     q: 'How does the AI diet chart scanner work?',
@@ -18,7 +18,7 @@ const faqs = [
   },
   {
     q: 'Who are Meenu and Maddy?',
-    a: 'They\'re your AI guardians. Meenu is warm and caring; Maddy is bold and focused. You can chat with them today for reminders, recipes and nutrition help — natural voice conversations are coming soon. Gold members can also create their own custom guardian.',
+    a: 'They\'re your AI guardians. Meenu is warm and caring; Maddy is bold and focused. You can chat with them today for reminders, recipes and nutrition help. The app also supports voice replies from your guardian. Gold members can create their own custom guardian.',
   },
   {
     q: 'Is my nutrition data safe and private?',

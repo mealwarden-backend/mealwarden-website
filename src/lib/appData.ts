@@ -10,29 +10,61 @@ export type Plan = {
   tagline: string
   popular?: boolean
   features: string[]
+  soon?: string[]   // upcoming features shown with "Coming soon" badge
 }
 
 // Mirrors PaywallScreen PLANS exactly. Annual ≈ 33% off monthly.
 export const PLANS: Plan[] = [
   {
     key: 'free', name: 'Free', monthly: 0, annual: 0, tagline: 'Get started',
-    features: ['1 active diet plan', 'Basic meal reminders', 'Water & weight tracking', 'Daily streaks & MealWarden Mates', 'Up to 3 meals a day'],
+    features: [
+      '1 active diet plan',
+      '5 Guardian messages / day',
+      'Basic meal reminders',
+      'Water & weight tracking',
+      'Daily streaks & MealWarden Mates',
+      'Up to 3 recipes / week',
+      'Prep task & grocery view',
+      'Up to 10 mates & 1 circle',
+    ],
   },
   {
     key: 'silver', name: 'Silver', monthly: 149, annual: 1199, tagline: 'For consistency',
-    features: ['Everything in Free', 'Unlimited diet plans', 'Full recipes & prep tasks', 'Progress analytics'],
+    features: [
+      'Everything in Free',
+      'Ad-free experience',
+      'Unlimited diet plans',
+      'Full recipes & prep tasks',
+      'Progress analytics',
+    ],
+    soon: ['WhatsApp morning digest', 'WhatsApp night reminder'],
   },
   {
     key: 'premium', name: 'Premium', monthly: 299, annual: 2399, tagline: 'Most loved', popular: true,
-    features: ['Everything in Silver', 'Meal Scan — AI calories from a photo', 'Smart grocery lists', 'Priority guardian replies'],
+    features: [
+      'Everything in Silver',
+      'Unlimited Guardian chat',
+      'Meal Scan — AI calories from a photo',
+      'Smart grocery lists',
+      'PDF diet plan export',
+      'Priority Guardian replies',
+    ],
+    soon: ['Voice Guardian (5 calls / day)'],
   },
   {
     key: 'gold', name: 'Gold', monthly: 699, annual: 5499, tagline: 'Full power',
-    features: ['Everything in Premium', 'Wearable & step sync', 'AI meal swaps', 'Create your own guardian', 'Priority support'],
+    features: [
+      'Everything in Premium',
+      'Wearable & step sync',
+      'AI meal swaps',
+      'Create your own guardian',
+      'Priority support',
+    ],
+    soon: ['Voice Guardian — unlimited', 'Family Plan (up to 5 users)', 'Guardian memory'],
   },
 ]
 
-export const TRIAL_DAYS = 30
+export const TRIAL_DAYS = 14
 
 // Real guardians from the app (Meenu & Maddy), plus the Gold custom guardian.
 export const GUARDIANS = [
