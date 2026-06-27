@@ -50,7 +50,7 @@ export default function AIGuardians() {
           <p style={{ fontSize: 16, color: '#6b7280', lineHeight: 1.85, marginBottom: 24, maxWidth: 440 }}>
             Pick the guardian that fits you. They watch over every meal, send gentle (or firm) reminders,
             answer your nutrition questions, and keep your streak alive — every single day. Chat with your
-            guardian today, with natural voice conversations coming soon.
+            guardian today — text and voice, powered by your guardian's personality.
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 28 }}>
@@ -75,7 +75,7 @@ export default function AIGuardians() {
             </div>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 100, padding: '8px 16px' }}>
               <span style={{ fontSize: 14 }}>🎙️</span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: '#2563eb' }}>Voice guardian — coming soon</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#2563eb' }}>Voice replies — available in app</span>
             </div>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: 100, padding: '8px 16px' }}>
               <span style={{ fontSize: 14 }}>✦</span>

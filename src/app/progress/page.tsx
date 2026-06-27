@@ -2,34 +2,49 @@
 
 import { useAuth } from '@/context/AuthContext'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { api } from '@/lib/api'
 
 const FONT      = 'var(--font-jakarta), Plus Jakarta Sans, sans-serif'
 const FONT_SYNE = 'var(--font-syne), Syne, sans-serif'
 
+type Period = 'day' | 'week' | 'month'
+const PERIODS: { v: Period; label: string }[] = [
+  { v: 'day',   label: 'Today' },
+  { v: 'week',  label: 'Week'  },
+  { v: 'month', label: 'Month' },
+]
+
 export default function Progress() {
   const { user } = useAuth()
   const router   = useRouter()
+  const [period, setPeriod] = useState<Period>('week')
   const [sum, setSum]       = useState<any>(null)
   const [wt, setWt]         = useState<any>(null)
   const [loaded, setLoaded] = useState(false)
+  const [fetching, setFetching] = useState(false)
+
+  const load = useCallback(async (p: Period) => {
+    setFetching(true)
+    try {
+      const [s, w] = await Promise.all([
+        api.getAnalyticsSummary(p).catch(() => null),
+        api.getWeightStats().catch(() => null),
+      ])
+      setSum(s); setWt(w)
+    } catch {} finally { setFetching(false); setLoaded(true) }
+  }, [])
 
   useEffect(() => {
     if (!user) { router.push('/'); return }
-    let active = true
-    ;(async () => {
-      try {
-        const [s, w] = await Promise.all([
-          api.getAnalyticsSummary('week').catch(() => null),
-          api.getWeightStats().catch(() => null),
-        ])
-        if (!active) return
-        setSum(s); setWt(w)
-      } catch {} finally { if (active) setLoaded(true) }
-    })()
-    return () => { active = false }
-  }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
+    load(period)
+  }, [user, router]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const switchPeriod = (p: Period) => {
+    if (p === period) return
+    setPeriod(p)
+    load(p)
+  }
 
   if (!user || !loaded) return null
 
@@ -38,11 +53,13 @@ export default function Progress() {
   const wat = sum?.water || {}
   const ins = sum?.insights || {}
 
+  const periodLabel = period === 'day' ? "Today's" : period === 'week' ? 'Last 7 days' : 'Last 30 days'
+
   const cards = [
-    { icon: '✅', label: 'Adherence', value: s.adherencePct != null ? `${s.adherencePct}%` : '–', color: '#f0fdf4', ac: '#16a34a' },
-    { icon: '🔥', label: 'Streak', value: s.streak != null ? `${s.streak} day${s.streak === 1 ? '' : 's'}` : '–', color: '#fff7ed', ac: '#f97316' },
-    { icon: '⚡', label: 'Avg Calories', value: s.avgDailyCalories ? `${s.avgDailyCalories}` : '–', color: '#eff6ff', ac: '#3b82f6' },
-    { icon: '📅', label: 'Days Logged', value: s.loggedDays != null ? `${s.loggedDays}` : '–', color: '#fdf4ff', ac: '#a855f7' },
+    { icon: '✅', label: 'Adherence',    value: s.adherencePct != null ? `${s.adherencePct}%` : '–', color: '#f0fdf4', ac: '#16a34a' },
+    { icon: '🔥', label: 'Streak',       value: s.streak != null ? `${s.streak} day${s.streak === 1 ? '' : 's'}` : '–', color: '#fff7ed', ac: '#f97316' },
+    { icon: '⚡', label: 'Avg Calories', value: s.avgDailyCalories ? `${s.avgDailyCalories} kcal` : '–', color: '#eff6ff', ac: '#3b82f6' },
+    { icon: '📅', label: 'Days Logged',  value: s.loggedDays != null ? `${s.loggedDays}` : '–', color: '#fdf4ff', ac: '#a855f7' },
   ]
   const macros = [
     { label: 'Protein', val: nut.proteinG, color: '#16a34a' },
@@ -57,11 +74,32 @@ export default function Progress() {
         <div style={{ maxWidth: 980, margin: '0 auto' }}>
           <div onClick={() => router.push('/dashboard')} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: 'rgba(255,255,255,0.7)', fontSize: 14, cursor: 'pointer', marginBottom: 22, fontWeight: 500 }}>← Back to Dashboard</div>
           <h1 style={{ fontFamily: FONT_SYNE, fontSize: 34, fontWeight: 800, color: '#fff', marginBottom: 8 }}>📊 My Progress</h1>
-          <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 15 }}>Your last 7 days at a glance.</p>
+          <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 15, marginBottom: 20 }}>{periodLabel} snapshot</p>
+
+          {/* Period toggle */}
+          <div style={{ display: 'inline-flex', background: 'rgba(255,255,255,0.12)', borderRadius: 12, padding: 4, gap: 4 }}>
+            {PERIODS.map(p => (
+              <button
+                key={p.v}
+                onClick={() => switchPeriod(p.v)}
+                style={{ padding: '8px 20px', borderRadius: 9, border: 'none', fontFamily: FONT, fontWeight: 700, fontSize: 13, cursor: 'pointer', transition: 'all 0.2s',
+                  background: period === p.v ? '#fff' : 'transparent',
+                  color: period === p.v ? '#052e16' : 'rgba(255,255,255,0.75)',
+                  boxShadow: period === p.v ? '0 2px 8px rgba(0,0,0,0.12)' : 'none',
+                }}
+              >{p.label}</button>
+            ))}
+          </div>
         </div>
       </div>
 
-      <div style={{ maxWidth: 980, margin: '-30px auto 0', padding: '0 24px 60px' }}>
+      <div style={{ maxWidth: 980, margin: '-30px auto 0', padding: '0 24px 60px', position: 'relative' }}>
+        {fetching && (
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(249,250,251,0.7)', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 24 }}>
+            <div style={{ fontSize: 28 }}>⏳</div>
+          </div>
+        )}
+
         {!s.hasPlan ? (
           <div style={{ background: '#fff', borderRadius: 24, padding: '56px 32px', textAlign: 'center', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
             <div style={{ fontSize: 56, marginBottom: 16 }}>📊</div>
@@ -71,6 +109,7 @@ export default function Progress() {
           </div>
         ) : (
           <>
+            {/* Stat cards */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 16, marginBottom: 20 }}>
               {cards.map(c => (
                 <div key={c.label} style={{ background: c.color, borderRadius: 20, padding: '22px 18px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
@@ -102,7 +141,7 @@ export default function Progress() {
                   <span style={{ fontFamily: FONT_SYNE, fontSize: 34, fontWeight: 800, color: '#3b82f6' }}>{wat.avgGlasses ?? 0}</span>
                   <span style={{ fontSize: 14, color: '#9ca3af' }}>avg glasses/day · goal {wat.goalGlasses ?? 8}</span>
                 </div>
-                <div style={{ marginTop: 10, fontSize: 13, color: '#6b7280' }}>{wat.daysTracked || 0} days tracked this week</div>
+                <div style={{ marginTop: 10, fontSize: 13, color: '#6b7280' }}>{wat.daysTracked || 0} days tracked</div>
               </div>
             </div>
 

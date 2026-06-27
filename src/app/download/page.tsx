@@ -359,7 +359,7 @@ export default function Download() {
           borderRadius: 16, maxWidth: 480,
         }}>
           <p style={{ fontSize: 13, color: '#16a34a', fontWeight: 600, textAlign: 'center' }}>
-            🚀 Launching soon on the App Store and Google Play. Every new account gets a 30-day free Gold trial.
+            🚀 Launching soon on the App Store and Google Play. Every new account gets a 14-day free Gold trial.
           </p>
         </div>
 

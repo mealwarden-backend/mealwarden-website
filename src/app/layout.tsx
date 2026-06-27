@@ -23,7 +23,7 @@ const sans = Inter({
 
 export const metadata: Metadata = {
   title: 'MealWarden — Your Meal Has a Guardian Now',
-  description: 'MealWarden is the world\'s first diet plan reader. Upload any diet plan — photo, PDF or handwriting — and your AI guardian reads it, schedules your week, and keeps you on track.',
+  description: 'MealWarden is one of the world\'s first diet plan readers. Upload any diet plan — photo, PDF or handwriting — and your AI guardian reads it, schedules your week, and keeps you on track.',
   icons: {
     icon: [{ url: '/logo-mark.png', type: 'image/png' }],
     shortcut: '/logo-mark.png',

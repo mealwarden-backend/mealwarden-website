@@ -492,15 +492,23 @@ function AIDietGeneratorModal({
                     )
                   })}
                 </div>
-                <div onClick={() => setReportSoon(true)} style={{ border: '1.5px dashed #c4b5fd', borderRadius: 12, padding: '14px 16px', background: '#faf5ff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div onClick={() => setReportSoon(v => !v)} style={{ border: '1.5px dashed #c4b5fd', borderRadius: 12, padding: '14px 16px', background: '#faf5ff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12 }}>
                   <span style={{ fontSize: 22 }}>📄</span>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 13.5, fontWeight: 700, color: '#6d28d9', fontFamily: FONT }}>Upload a health report</div>
                     <div style={{ fontSize: 12, color: '#9ca3af', fontFamily: FONT }}>PDF or Word — your guardian will tailor the plan to your reports</div>
                   </div>
-                  <span style={{ fontSize: 11, fontWeight: 800, color: '#a855f7', background: '#f3e8ff', border: '1px solid #e9d5ff', borderRadius: 100, padding: '4px 10px', whiteSpace: 'nowrap' }}>SOON</span>
+                  <span style={{ fontSize: 11, fontWeight: 800, color: '#16a34a', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 100, padding: '4px 10px', whiteSpace: 'nowrap' }}>In app</span>
                 </div>
-                {reportSoon && <p style={{ fontSize: 12, color: '#7c3aed', marginTop: 8, fontWeight: 600, fontFamily: FONT }}>🚀 Reading your health reports is coming soon. For now, pick any conditions above and your plan will respect them.</p>}
+                {reportSoon && (
+                  <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '12px 14px', marginTop: 8, display: 'flex', gap: 10, alignItems: 'flex-start', fontFamily: FONT }}>
+                    <span style={{ fontSize: 16, flexShrink: 0 }}>📱</span>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#16a34a', marginBottom: 3 }}>Available in the MealWarden app</div>
+                      <div style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.6 }}>Upload blood reports, BMI charts or doctor&apos;s notes in the app and your guardian reads them automatically, selecting the right conditions below. For now, pick conditions manually above.</div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div style={{ background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: 12, padding: '14px 16px', display: 'flex', gap: 10 }}>
@@ -1181,6 +1189,8 @@ export default function Dashboard() {
             { icon: '⚖️', label: 'Weight', href: '/weight' },
             { icon: '🥣', label: 'Prep', href: '/prep' },
             { icon: '🛒', label: 'Grocery List', href: '/grocery' },
+            { icon: '🪙', label: 'Coin Center', href: '/coins' },
+            { icon: '🎁', label: 'Refer & Earn', href: '/refer' },
             { icon: '💎', label: 'Plans & Trial', href: '/upgrade' },
           ].map(l => (
             <button key={l.href} onClick={() => router.push(l.href)} style={{ flex: '1 1 160px', display: 'flex', alignItems: 'center', gap: 10, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 14, padding: '14px 16px', cursor: 'pointer', fontFamily: FONT, boxShadow: '0 4px 20px rgba(0,0,0,0.04)' }}>
@@ -1323,9 +1333,4 @@ export default function Dashboard() {
           onClose={() => setShowAnalytics(false)}
           meals={meals}
           dietChart={dietChart}
-          profile={profile}
-        />
-      )}
-    </div>
-  )
-}
+ 

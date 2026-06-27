@@ -22,6 +22,7 @@ export default function LoginModal({ isOpen, onClose }: Props) {
   const [name, setName]             = useState('')
   const [guardian, setGuardian]     = useState<'meenu' | 'maddy'>('meenu')
   const [agreed, setAgreed]         = useState(false)
+  const [referralCode, setReferralCode] = useState('')
   const [showPass, setShowPass]     = useState(false)
   const [status, setStatus]         = useState<StatusType>('idle')
   const [errorMsg, setErrorMsg]     = useState('')
@@ -125,7 +126,7 @@ export default function LoginModal({ isOpen, onClose }: Props) {
     const pw = password.trim()
 
     // AuthContext talks to the shared MealWarden backend and stores the JWT.
-    const result = tab === 'signup' ? await register(displayName, em, pw) : await login(em, pw)
+    const result = tab === 'signup' ? await register(displayName, em, pw, referralCode.trim().toUpperCase() || undefined) : await login(em, pw)
 
     if (!result.success) {
       setStatus('error')
@@ -462,6 +463,28 @@ export default function LoginModal({ isOpen, onClose }: Props) {
                   </button>
                 </div>
               </div>
+
+              {/* Referral code — signup only */}
+              {tab === 'signup' && (
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 5, fontFamily: 'var(--font-jakarta), Plus Jakarta Sans, sans-serif' }}>
+                    Referral Code <span style={{ color: '#9ca3af', fontWeight: 400 }}>(optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. ABCD123"
+                    value={referralCode}
+                    onChange={e => setReferralCode(e.target.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 7))}
+                    disabled={isLoading || status === 'success'}
+                    style={{ ...inputStyle, letterSpacing: referralCode ? 4 : 0 }}
+                    onFocus={(e: any) => (e.target.style.borderColor = '#16a34a')}
+                    onBlur={(e: any) => (e.target.style.borderColor = '#e5e7eb')}
+                  />
+                  {referralCode.length === 7 && (
+                    <div style={{ fontSize: 12, color: '#16a34a', fontWeight: 700, marginTop: 4 }}>🎁 +100 bonus MealCoins on signup</div>
+                  )}
+                </div>
+              )}
 
               {/* Agree checkbox — signup only */}
               {tab === 'signup' && (

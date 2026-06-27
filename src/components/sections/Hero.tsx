@@ -170,7 +170,7 @@ export default function Hero() {
             borderRadius: 100, padding: '6px 16px', marginBottom: 28,
           }}>
             <span style={{ fontSize: 14 }}>🌿</span>
-            <span style={{ fontSize: 13, fontWeight: 600, color: '#15803d' }}>★ World&apos;s First Diet Plan Reader</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#15803d' }}>★ <em style={{ fontSize: 11, fontWeight: 400, fontStyle: 'italic', fontFamily: 'Georgia, serif' }}>one of</em> WORLD&apos;S FIRST DIET PLAN READER</span>
             <span className="dot-blink" style={{ width: 7, height: 7, borderRadius: '50%', background: '#4ade80', display: 'inline-block' }} />
           </div>
 
@@ -229,7 +229,7 @@ export default function Hero() {
           {/* Stats */}
           <div className="hero-in-d4" style={{ display: 'flex', gap: 44 }}>
             {[
-              ['30 days', 'Free Gold trial'],
+              ['14 days', 'Free Gold trial'],
               ['7-day', 'AI meal plans'],
               ['🌍', 'For anyone, anywhere'],
             ].map(([v, l]) => (

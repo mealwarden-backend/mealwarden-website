@@ -126,7 +126,7 @@ export default function About() {
             </div>
           ))}
         </div>
-        <p style={{ textAlign: 'center', fontSize: 13.5, color: '#9ca3af' }}>Chat with them today, with voice conversations coming soon. Gold members can create their own guardian.</p>
+        <p style={{ textAlign: 'center', fontSize: 13.5, color: '#9ca3af' }}>Chat with them today — text and voice. Gold members can create their own custom guardian.</p>
       </section>
 
       {/* ── Founder ── */}
@@ -146,7 +146,7 @@ export default function About() {
         <div style={{ maxWidth: 600, margin: '0 auto' }}>
           <div style={{ fontSize: 46, marginBottom: 14 }}>🛡️</div>
           <h2 style={{ fontFamily: FONT_SYNE, fontSize: 38, fontWeight: 800, color: '#052e16', letterSpacing: -1, marginBottom: 16 }}>Your guardian is ready.</h2>
-          <p style={{ fontSize: 17, color: '#4b5563', lineHeight: 1.8, marginBottom: 32 }}>Start with a 30-day free Gold trial and finally stay consistent — with someone in your corner.</p>
+          <p style={{ fontSize: 17, color: '#4b5563', lineHeight: 1.8, marginBottom: 32 }}>Start with a 14-day free Gold trial and finally stay consistent — with someone in your corner.</p>
           <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
             <button onClick={() => setCs(true)} className="btn-primary" style={{ padding: '15px 32px', background: 'linear-gradient(135deg,#16a34a,#22c55e)', color: '#fff', border: 'none', borderRadius: 14, fontWeight: 700, fontSize: 15, cursor: 'pointer', fontFamily: FONT, boxShadow: '0 10px 32px rgba(22,163,74,0.35)' }}>🍎 Get MealWarden</button>
             <button onClick={() => router.push('/')} className="btn-secondary" style={{ padding: '15px 32px', background: '#fff', color: '#374151', border: '2px solid #e5e7eb', borderRadius: 14, fontWeight: 700, fontSize: 15, cursor: 'pointer', fontFamily: FONT }}>Explore features →</button>
