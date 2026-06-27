@@ -193,9 +193,6 @@ export const api = {
   getAnalyticsSummary: (period = 'week') => cget(`/api/analytics/summary?period=${period}`),
   getStreak:           () => cget('/api/analytics/streak'),
 
-  // Coins + badges
-  getCoinStatus: () => cget('/api/coins/status'),
-
   // Leagues — weekly points competition
   getWeeklyLeague: () => cget('/api/leagues/weekly'),
 
