@@ -1333,4 +1333,9 @@ export default function Dashboard() {
           onClose={() => setShowAnalytics(false)}
           meals={meals}
           dietChart={dietChart}
- 
+          profile={profile}
+        />
+      )}
+    </div>
+  );
+}
