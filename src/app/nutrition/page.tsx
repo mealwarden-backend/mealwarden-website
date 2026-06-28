@@ -59,6 +59,7 @@ export default function Nutrition() {
   const [dietChart,  setDietChart]  = useState<DietChart | null>(null)
   const [todayMeals, setTodayMeals] = useState<Meal[]>([])
   const [loaded,     setLoaded]     = useState(false)
+  const [activePlanId, setActivePlanId] = useState<string | null>(null)
   const [recipeMeal, setRecipeMeal] = useState<{ id: string; name: string } | null>(null)
 
   // Edit modal state
@@ -66,6 +67,12 @@ export default function Nutrition() {
   const [editForm,   setEditForm]   = useState({ name: '', time: '', kcal: '', protein: '', carbs: '', fat: '' })
   const [editSaving, setEditSaving] = useState(false)
   const [estimating, setEstimating] = useState(false)
+
+  // Add meal modal state
+  const [addModal,    setAddModal]   = useState(false)
+  const [addForm,     setAddForm]    = useState({ name: '', mealType: 'breakfast', time: '08:00', kcal: '', protein: '', carbs: '', fat: '' })
+  const [addSaving,   setAddSaving]  = useState(false)
+  const [addEstimate, setAddEstimate] = useState(false)
 
   // Macro detail overlay
   const [macroMeal, setMacroMeal] = useState<Meal | null>(null)
@@ -94,6 +101,7 @@ export default function Nutrition() {
         done: loggedIds.has(m.id),
       }))
       const hasPlan = md?.hasPlan ?? meals.length > 0
+      if (md?.planId) setActivePlanId(md.planId)
       if (hasPlan && meals.length > 0) {
         setDietChart({
           fileName: md?.dayName ? `Your plan · ${md.dayName}` : 'Your active plan',
@@ -111,6 +119,36 @@ export default function Nutrition() {
     loadData().finally(() => { if (active) setLoaded(true) })
     return () => { active = false }
   }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const estimateAdd = async () => {
+    if (!addForm.name.trim() || addEstimate) return
+    setAddEstimate(true)
+    try {
+      const res = await api.estimateMeal(addForm.name.trim())
+      const d = res?.data || {}
+      setAddForm(f => ({ ...f, kcal: d.calories != null ? String(d.calories) : f.kcal, protein: d.proteinG != null ? String(d.proteinG) : f.protein, carbs: d.carbsG != null ? String(d.carbsG) : f.carbs, fat: d.fatG != null ? String(d.fatG) : f.fat }))
+    } catch {} finally { setAddEstimate(false) }
+  }
+
+  const addMeal = async () => {
+    if (!activePlanId || !addForm.name.trim() || addSaving) return
+    if (!addForm.time.match(/^\d{2}:\d{2}$/)) { alert('Use HH:MM time format e.g. 08:30'); return }
+    setAddSaving(true)
+    try {
+      await (api as any).addMealToPlan(activePlanId, {
+        mealName: addForm.name.trim(),
+        mealType: addForm.mealType,
+        timeHHMM: addForm.time,
+        calories: addForm.kcal ? parseFloat(addForm.kcal) : null,
+        proteinG: addForm.protein ? parseFloat(addForm.protein) : null,
+        carbsG:   addForm.carbs ? parseFloat(addForm.carbs) : null,
+        fatG:     addForm.fat ? parseFloat(addForm.fat) : null,
+      })
+      setAddModal(false)
+      setAddForm({ name: '', mealType: 'breakfast', time: '08:00', kcal: '', protein: '', carbs: '', fat: '' })
+      await loadData()
+    } catch (e: any) { alert(e?.message || 'Failed to add meal') } finally { setAddSaving(false) }
+  }
 
   const toggleMeal = useCallback(async (meal: Meal) => {
     if (!meal.id || toggling) return
@@ -253,12 +291,22 @@ export default function Nutrition() {
                 From: <strong style={{ color: '#4ade80' }}>{dietChart.fileName}</strong> · Uploaded {new Date(dietChart.uploadedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
               </p>
             </div>
-            <button
-              onClick={() => router.push('/dashboard')}
-              style={{ padding: '10px 20px', background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: FONT }}
-            >
-              ← Back to Dashboard
-            </button>
+            <div style={{ display: 'flex', gap: 10 }}>
+              {activePlanId && (
+                <button
+                  onClick={() => setAddModal(true)}
+                  style={{ padding: '10px 20px', background: 'rgba(255,255,255,0.9)', border: 'none', borderRadius: 10, color: '#052e16', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}
+                >
+                  + Add Meal
+                </button>
+              )}
+              <button
+                onClick={() => router.push('/dashboard')}
+                style={{ padding: '10px 20px', background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: FONT }}
+              >
+                ← Back to Dashboard
+              </button>
+            </div>
           </div>
         </div>
       </div>

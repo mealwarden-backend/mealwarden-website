@@ -37,6 +37,9 @@ export default function Footer() {
     { label: 'Features',      action: () => scrollTo('features') },
     { label: 'How It Works',  action: () => scrollTo('how-it-works') },
     { label: 'Pricing',       action: () => scrollTo('pricing') },
+    { label: 'Circles',       action: () => router.push('/circles') },
+    { label: 'Leagues',       action: () => router.push('/leagues') },
+    { label: 'Refer & Earn',  action: () => router.push('/refer') },
     { label: 'Get the App',   action: () => setCs(true) },
   ]
 

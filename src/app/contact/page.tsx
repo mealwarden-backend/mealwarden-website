@@ -74,7 +74,7 @@ export default function Contact() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16, marginBottom: 60 }}>
           {[
             { icon: '📧', title: 'Email Us',         value: 'support@mealwarden.com',   sub: 'Response within 2 hours',      color: '#f0fdf4', ac: '#16a34a', href: 'mailto:support@mealwarden.com' },
-            { icon: '💬', title: 'WhatsApp Support',  value: '+91 98765 43210',           sub: 'Gold members get priority',    color: '#fff7ed', ac: '#f97316', href: 'https://wa.me/919876543210' },
+            { icon: '💬', title: 'WhatsApp Support',  value: 'Gold members get priority', sub: 'Enabled after plan activation', color: '#fff7ed', ac: '#f97316', href: 'mailto:support@mealwarden.com' },
             { icon: '🐦', title: 'Twitter / X',       value: '@MealWarden',               sub: 'Quick replies & updates',      color: '#eff6ff', ac: '#3b82f6', href: 'https://twitter.com/mealwarden' },
           ].map(c => (
             <div key={c.title} onClick={() => window.open(c.href, '_blank')} style={{ background: c.color, borderRadius: 20, padding: '28px 24px', border: '1.5px solid rgba(0,0,0,0.05)', cursor: 'pointer', transition: 'transform 0.3s ease, box-shadow 0.3s ease' }}
@@ -181,10 +181,10 @@ export default function Contact() {
             <div style={{ background: '#f0fdf4', border: '1.5px solid #bbf7d0', borderRadius: 20, padding: '24px' }}>
               <div style={{ fontFamily: FONT_SYNE, fontSize: 18, fontWeight: 700, color: '#052e16', marginBottom: 16 }}>⚡ Response Times</div>
               {[
-                { label: 'Email Support',         time: '< 2 hours',  note: 'Business hours (9AM–8PM IST)', color: '#16a34a' },
-                { label: 'WhatsApp (Gold users)', time: '< 30 mins',  note: 'Priority support',             color: '#f97316' },
-                { label: 'Twitter / X',           time: '< 4 hours',  note: 'Public questions & feedback',  color: '#3b82f6' },
-                { label: 'In-App Chat',           time: 'Instant',    note: 'AI-powered responses 24/7',   color: '#a855f7' },
+                { label: 'Email Support',        time: '< 2 hours',  note: 'Business hours (9AM–8PM IST)', color: '#16a34a' },
+                { label: 'WhatsApp (Gold Plan)', time: '< 30 mins',  note: 'Priority support, on request', color: '#f97316' },
+                { label: 'Twitter / X',          time: '< 4 hours',  note: 'Public questions & feedback',  color: '#3b82f6' },
+                { label: 'In-App Chat',          time: 'Instant',    note: 'AI-powered responses 24/7',    color: '#a855f7' },
               ].map(r => (
                 <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #e5e7eb' }}>
                   <div>

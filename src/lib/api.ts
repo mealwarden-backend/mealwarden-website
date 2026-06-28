@@ -192,6 +192,7 @@ export const api = {
   getWeeklyAnalytics:  () => cget('/api/analytics/weekly'),
   getAnalyticsSummary: (period = 'week') => cget(`/api/analytics/summary?period=${period}`),
   getStreak:           () => cget('/api/analytics/streak'),
+  getJourneySummary:   (period: string, guardian?: string) => req(`/api/analytics/journey-summary?period=${period}&guardian=${guardian || 'meenu'}`).then(unwrap),
 
   // Leagues — weekly points competition
   getWeeklyLeague: () => cget('/api/leagues/weekly'),
@@ -207,7 +208,9 @@ export const api = {
   askAssistant: (question: string, guardian?: string, history?: any[], persona?: string) =>
     mutate('/api/assistant/ask', { method: 'POST', body: JSON.stringify({ question, guardian, history, persona }) }),
 
-  // Coins
+  // Meals — add to plan
+  addMealToPlan: (planId: string, payload: any) => mutate(`/api/meals/plan/${planId}`, { method: 'POST', body: JSON.stringify(payload) }),
+
   // Coins
   getCoinStatus:      () => cget('/api/coins/status'),
   getCoinLedger:      () => cget('/api/coins/ledger'),
@@ -228,6 +231,11 @@ export const api = {
   getReferralCode:   () => cget('/api/referral/my-code'),
   getReferralStats:  () => cget('/api/referral/stats'),
   applyReferralCode: (code: string) => mutate('/api/referral/apply', { method: 'POST', body: JSON.stringify({ code }) }),
+
+  // Notifications (bell icon)
+  getNotifications: () => req('/api/notifications').then(unwrap),
+  markAllNotificationsRead: () => mutate('/api/notifications/read-all', { method: 'POST' }),
+  markNotificationRead: (id: string) => mutate(`/api/notifications/${id}/read`, { method: 'POST' }),
 
   clearCache,
 }
