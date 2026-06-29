@@ -219,3 +219,71 @@ body {
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-syne), 'Syne', sans-serif;
 }
+
+/* ── Hero responsive ─────────────────────────────────────────────────────── */
+.hero-layout {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 80px 48px;
+  display: flex;
+  gap: 60px;
+  align-items: center;
+  width: 100%;
+}
+
+.hero-h1 {
+  font-size: 64px;
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -2.5px;
+  color: #052e16;
+  margin-bottom: 24px;
+}
+
+.hero-phones {
+  flex: 1;
+  position: relative;
+  height: 520px;
+  display: flex;
+  justify-content: center;
+}
+
+.hero-phone-side {
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .hero-layout {
+    flex-direction: column-reverse;
+    padding: 32px 20px 48px;
+    gap: 32px;
+  }
+
+  .hero-h1 {
+    font-size: 38px !important;
+    letter-spacing: -1.5px !important;
+    margin-bottom: 16px;
+  }
+
+  .hero-phones {
+    height: 340px;
+    width: 100%;
+  }
+
+  .hero-phone-side {
+    display: none !important;
+  }
+
+  .hero-stats {
+    gap: 24px !important;
+  }
+
+  .hero-ctas {
+    flex-direction: column !important;
+  }
+
+  .hero-ctas button {
+    width: 100%;
+    justify-content: center;
+  }
+}

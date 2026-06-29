@@ -154,11 +154,7 @@ export default function Hero() {
         bottom: 60, left: -60, pointerEvents: 'none',
       }} />
 
-      <div style={{
-        maxWidth: 1200, margin: '0 auto',
-        padding: '80px 48px', display: 'flex',
-        gap: 60, alignItems: 'center', width: '100%',
-      }}>
+      <div className="hero-layout">
 
         {/* ── Left ── */}
         <div style={{ flex: 1 }}>
@@ -175,11 +171,8 @@ export default function Hero() {
           </div>
 
           {/* Headline */}
-          <h1 className="hero-in-d1" style={{
+          <h1 className="hero-in-d1 hero-h1" style={{
             fontFamily: 'var(--font-jakarta), Plus Jakarta Sans, sans-serif',
-            fontSize: 64, fontWeight: 800,
-            lineHeight: 1.05, letterSpacing: -2.5,
-            color: '#052e16', marginBottom: 24,
           }}>
             Your Meals Have<br />
             <span className="gradient-text-green">A Guardian Now.</span>
@@ -194,7 +187,7 @@ export default function Hero() {
           </p>
 
           {/* CTA Buttons */}
-          <div className="hero-in-d3" style={{ display: 'flex', gap: 14, marginBottom: 52, flexWrap: 'wrap' }}>
+          <div className="hero-in-d3 hero-ctas" style={{ display: 'flex', gap: 14, marginBottom: 52, flexWrap: 'wrap' }}>
             <button
               className="btn-primary"
               onClick={() => setCs(true)}
@@ -227,7 +220,7 @@ export default function Hero() {
           </div>
 
           {/* Stats */}
-          <div className="hero-in-d4" style={{ display: 'flex', gap: 44 }}>
+          <div className="hero-in-d4 hero-stats" style={{ display: 'flex', gap: 44 }}>
             {[
               ['14 days', 'Free Gold trial'],
               ['7-day', 'AI meal plans'],
@@ -242,7 +235,7 @@ export default function Hero() {
         </div>
 
         {/* ── Right: Phones ── */}
-        <div className="hero-in-d2" style={{ flex: 1, position: 'relative', height: 520, display: 'flex', justifyContent: 'center' }}>
+        <div className="hero-in-d2 hero-phones">
           {/* Glow */}
           <div style={{
             position: 'absolute', width: 340, height: 340, borderRadius: '50%',
@@ -251,7 +244,7 @@ export default function Hero() {
           }} />
 
           {/* Phone B — left */}
-          <div className="float-b" style={{ position: 'absolute', left: '0%', top: '55%', transform: 'translateY(-50%)', zIndex: 2, opacity: 0.82 }}>
+          <div className="float-b hero-phone-side" style={{ position: 'absolute', left: '0%', top: '55%', transform: 'translateY(-50%)', zIndex: 2, opacity: 0.82 }}>
             <PhoneFrame shadow="0 24px 50px rgba(0,0,0,0.18)">
               <div style={{ transform: 'scale(0.85)', transformOrigin: 'top left', width: '118%', height: '118%' }}>
                 <MealScreen />
@@ -267,7 +260,7 @@ export default function Hero() {
           </div>
 
           {/* Phone C — right */}
-          <div className="float-c" style={{ position: 'absolute', right: '0%', top: '45%', transform: 'translateY(-50%)', zIndex: 2, opacity: 0.82 }}>
+          <div className="float-c hero-phone-side" style={{ position: 'absolute', right: '0%', top: '45%', transform: 'translateY(-50%)', zIndex: 2, opacity: 0.82 }}>
             <PhoneFrame shadow="0 24px 50px rgba(0,0,0,0.18)">
               <div style={{ transform: 'scale(0.85)', transformOrigin: 'top left', width: '118%', height: '118%' }}>
                 <StatsScreen />
