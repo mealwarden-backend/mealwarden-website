@@ -2,7 +2,8 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'https://mealwarden-backend-production.up.railway.app'
+import { API_BASE_URL } from '../lib/constants'
+const API = API_BASE_URL
 
 interface User {
   id: string

@@ -1161,7 +1161,7 @@ export default function Dashboard() {
               </div>
             </div>
             <button onClick={() => router.push('/upgrade')} style={{ padding: '10px 20px', background: 'linear-gradient(135deg,#16a34a,#22c55e)', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: FONT, whiteSpace: 'nowrap' }}>
-              {sub.isTrial ? 'See plans →' : 'Upgrade →'}
+              {'Membership →'}
             </button>
           </div>
         )}
@@ -1197,7 +1197,7 @@ export default function Dashboard() {
             { icon: '🛒', label: 'Grocery List', href: '/grocery' },
             { icon: '🪙', label: 'Coin Center', href: '/coins' },
             { icon: '🎁', label: 'Refer & Earn', href: '/refer' },
-            { icon: '💎', label: 'Plans & Trial', href: '/upgrade' },
+            { icon: '👑', label: 'Membership', href: '/upgrade' },
           ].map(l => (
             <button key={l.href} onClick={() => router.push(l.href)} style={{ flex: '1 1 160px', display: 'flex', alignItems: 'center', gap: 10, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 14, padding: '14px 16px', cursor: 'pointer', fontFamily: FONT, boxShadow: '0 4px 20px rgba(0,0,0,0.04)' }}>
               <span style={{ fontSize: 22 }}>{l.icon}</span>
@@ -1295,7 +1295,7 @@ export default function Dashboard() {
                   { icon: '✨', label: `Generate with ${guardianName}`,   color: '#f5f3ff', ac: '#7c3aed', onClick: () => setShowAIGenerator(true) },
                   { icon: '🛒', label: 'View Grocery List',  color: '#f0fdf4', ac: '#16a34a', onClick: () => setShowGrocery(true) },
                   { icon: '📊', label: 'View Analytics',     color: '#eff6ff', ac: '#3b82f6', onClick: () => setShowAnalytics(true) },
-                  { icon: '💎', label: 'Upgrade to Premium', color: '#fdf4ff', ac: '#a855f7', onClick: () => router.push('/upgrade') },
+                  { icon: '👑', label: 'View Membership', color: '#fffbeb', ac: '#ca8a04', onClick: () => router.push('/upgrade') },
                 ].map(a => (
                   <div key={a.label} onClick={a.onClick} style={{ display: 'flex', alignItems: 'center', gap: 12, background: a.color, borderRadius: 12, padding: '12px 16px', cursor: 'pointer', transition: 'transform 0.2s ease' }} onMouseEnter={e => (e.currentTarget.style.transform = 'translateX(4px)')} onMouseLeave={e => (e.currentTarget.style.transform = 'translateX(0)')}>
                     <span style={{ fontSize: 18 }}>{a.icon}</span>

@@ -3,26 +3,39 @@
 import { useAuth } from '@/context/AuthContext'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { PLANS, TRIAL_DAYS } from '@/lib/appData'
+import { TRIAL_DAYS } from '@/lib/appData'
 import { api } from '@/lib/api'
 
-const FONT = 'var(--font-jakarta), Plus Jakarta Sans, sans-serif'
+const FONT   = 'var(--font-jakarta), Plus Jakarta Sans, sans-serif'
+const GREEN  = '#16a34a'
+const GOLD   = '#ca8a04'
+const GOLD_S = 'rgba(202,138,4,0.10)'
+
+const GOLD_FEATURES = [
+  { icon: '🥗', label: 'AI Diet Generation',         desc: 'Personalised 7-day plans built around your goals, cuisine & schedule' },
+  { icon: '📸', label: 'Unlimited Meal Scans',        desc: 'Photograph any meal — your Guardian estimates calories & macros instantly' },
+  { icon: '💬', label: 'Unlimited Guardian Chat',     desc: 'Ask anything, anytime — nutrition advice, swaps, motivation' },
+  { icon: '📊', label: 'Full Analytics (90 days)',    desc: 'Deep progress charts across weight, macros, streaks and habits' },
+  { icon: '🛒', label: 'Smart Grocery Lists',         desc: 'AI-sorted shopping lists generated straight from your diet plan' },
+  { icon: '🏆', label: 'Leagues & MealCoins',         desc: 'Compete with friends, earn coins, and climb the leaderboard' },
+  { icon: '🔔', label: 'All Reminders & Prep Alerts', desc: 'Meal, water, weight and prep-task reminders — never miss a beat' },
+  { icon: '📄', label: 'PDF Diet Plan Export',        desc: 'Download and share your personalised plan as a beautifully formatted PDF' },
+]
 
 export default function Upgrade() {
   const { user } = useAuth()
   const router   = useRouter()
 
-  const [annual, setAnnual]   = useState(true)
-  const [tier, setTier]       = useState('free')
-  const [isTrial, setIsTrial] = useState(false)
+  const [tier, setTier]           = useState('free')
+  const [isTrial, setIsTrial]     = useState(false)
   const [trialDays, setTrialDays] = useState(0)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading]     = useState(true)
 
   // Redeem code
-  const [code, setCode]       = useState('')
-  const [busy, setBusy]       = useState(false)
-  const [msg, setMsg]         = useState('')
-  const [msgOk, setMsgOk]     = useState(false)
+  const [code, setCode]   = useState('')
+  const [busy, setBusy]   = useState(false)
+  const [msg, setMsg]     = useState('')
+  const [msgOk, setMsgOk] = useState(false)
 
   useEffect(() => { if (!user) router.push('/') }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -51,79 +64,103 @@ export default function Upgrade() {
 
   if (!user) return null
 
-  const priceMain = (p: typeof PLANS[number]) => p.monthly === 0 ? '₹0' : (annual ? `₹${Math.round(p.annual / 12)}` : `₹${p.monthly}`)
-  const priceSub  = (p: typeof PLANS[number]) => p.monthly === 0 ? 'forever' : (annual ? `/mo · billed ₹${p.annual}/yr` : '/month')
-
   return (
     <div style={{ minHeight: '100vh', background: '#f9fafb', fontFamily: FONT }}>
-      {/* Header */}
-      <div style={{ background: 'linear-gradient(135deg,#052e16,#16a34a)', padding: '48px 48px 80px', textAlign: 'center' }}>
-        <div onClick={() => router.push('/dashboard')} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: 'rgba(255,255,255,0.7)', fontSize: 14, cursor: 'pointer', marginBottom: 24, fontWeight: 500 }}>← Back to Dashboard</div>
-        <h1 style={{ fontFamily: FONT, fontSize: 40, fontWeight: 800, color: '#fff', marginBottom: 12 }}>Choose Your Plan 💎</h1>
-        <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 16, maxWidth: 520, margin: '0 auto' }}>
-          {isTrial
-            ? `You're on the Gold free trial — ${trialDays} day${trialDays === 1 ? '' : 's'} left. Pick a plan to keep your features after it ends.`
-            : `You're on the ${tier.toUpperCase()} plan. Upgrade anytime.`}
-        </p>
 
-        {/* Billing toggle */}
-        <div style={{ display: 'inline-flex', alignItems: 'center', background: 'rgba(255,255,255,0.15)', borderRadius: 100, padding: 4, marginTop: 22 }}>
-          {['Monthly', 'Annual · Save 33%'].map((label, i) => (
-            <button key={label} onClick={() => setAnnual(i === 1)} style={{ padding: '9px 20px', borderRadius: 100, background: (i === 1) === annual ? '#fff' : 'transparent', color: (i === 1) === annual ? '#052e16' : 'rgba(255,255,255,0.85)', border: 'none', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: FONT }}>{label}</button>
-          ))}
+      {/* ── Header ───────────────────────────────────────────────────────── */}
+      <div style={{ background: 'linear-gradient(135deg,#1a0a00,#92400e,#b45309)', padding: '48px 24px 80px', textAlign: 'center' }}>
+        <div onClick={() => router.push('/dashboard')} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: 'rgba(255,255,255,0.65)', fontSize: 14, cursor: 'pointer', marginBottom: 24, fontWeight: 500 }}>
+          ← Back to Dashboard
         </div>
+
+        {/* Crown */}
+        <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', border: '2px solid rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 34, margin: '0 auto 18px' }}>
+          👑
+        </div>
+        <div style={{ fontSize: 11, fontWeight: 900, color: 'rgba(255,255,255,0.6)', letterSpacing: 3, marginBottom: 10 }}>GOLD MEMBERSHIP</div>
+        <h1 style={{ fontFamily: FONT, fontSize: 36, fontWeight: 900, color: '#fff', margin: '0 0 14px', lineHeight: 1.15 }}>
+          {isTrial
+            ? `Your trial: ${trialDays} day${trialDays === 1 ? '' : 's'} left ✨`
+            : 'Membership coming soon'}
+        </h1>
+        <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: 16, maxWidth: 540, margin: '0 auto', lineHeight: 1.65 }}>
+          {isTrial
+            ? `You're on your ${TRIAL_DAYS}-day Gold trial — every premium feature is unlocked, free. Enjoy it fully before membership plans go live.`
+            : `Every new account starts with a ${TRIAL_DAYS}-day Gold trial. Membership plans launch soon — you'll be the first to know.`}
+        </p>
       </div>
 
-      <div style={{ maxWidth: 1080, margin: '-50px auto 0', padding: '0 24px 40px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 18 }}>
-          {PLANS.map((p) => {
-            const current = tier === p.key
-            return (
-              <div key={p.key} style={{ background: p.popular ? '#f0fdf4' : '#fff', border: `2px solid ${p.popular ? '#16a34a' : '#e5e7eb'}`, borderRadius: 24, padding: '34px 26px', position: 'relative', boxShadow: p.popular ? '0 20px 60px rgba(22,163,74,0.18)' : '0 4px 20px rgba(0,0,0,0.06)' }}>
-                {p.popular && <div style={{ position: 'absolute', top: -14, left: '50%', transform: 'translateX(-50%)', background: 'linear-gradient(135deg,#16a34a,#22c55e)', color: '#fff', fontSize: 11, fontWeight: 700, padding: '4px 16px', borderRadius: 100, whiteSpace: 'nowrap' }}>MOST POPULAR</div>}
-                {current && <div style={{ position: 'absolute', top: 16, right: 16, background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 100, padding: '2px 10px', fontSize: 11, color: '#16a34a', fontWeight: 700 }}>Current</div>}
+      <div style={{ maxWidth: 760, margin: '-50px auto 0', padding: '0 24px 60px' }}>
 
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#6b7280', marginBottom: 4 }}>{p.name}</div>
-                <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 10 }}>{p.tagline}</div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 2 }}>
-                  <span style={{ fontFamily: FONT, fontSize: 38, fontWeight: 800, color: '#052e16' }}>{priceMain(p)}</span>
-                </div>
-                <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 20, paddingBottom: 18, borderBottom: '1px solid #e5e7eb' }}>{priceSub(p)}</div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 22 }}>
-                  {p.features.map((f, j) => (
-                    <div key={j} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                      <div style={{ width: 18, height: 18, borderRadius: '50%', background: p.popular ? '#16a34a' : '#f0fdf4', border: `1.5px solid ${p.popular ? '#16a34a' : '#bbf7d0'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
-                        <span style={{ fontSize: 10, color: p.popular ? '#fff' : '#16a34a' }}>✓</span>
-                      </div>
-                      <span style={{ fontSize: 13, color: '#374151', lineHeight: 1.5 }}>{f}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <button disabled={current || loading} style={{ width: '100%', padding: '13px', background: current ? '#f3f4f6' : (p.popular ? 'linear-gradient(135deg,#16a34a,#22c55e)' : '#052e16'), color: current ? '#9ca3af' : '#fff', border: 'none', borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: current ? 'not-allowed' : 'pointer', fontFamily: FONT }}
-                  onClick={() => { if (!current && p.key !== 'free') { setMsgOk(false); setMsg('Paid plans launch soon — got an invite/founding code? Redeem it below to unlock now.') } }}>
-                  {current ? 'Current plan' : p.key === 'free' ? 'Free' : `Choose ${p.name}`}
-                </button>
+        {/* ── Trial status card ─────────────────────────────────────────── */}
+        {!loading && (
+          <div style={{ background: isTrial ? 'linear-gradient(135deg,#fffbeb,#fef3c7)' : '#fff', border: `2px solid ${isTrial ? '#fcd34d' : '#e5e7eb'}`, borderRadius: 20, padding: '22px 24px', marginBottom: 28, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+            <div style={{ fontSize: 36 }}>{isTrial ? '⏳' : tier === 'free' ? '🆓' : '✅'}</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 16, fontWeight: 900, color: '#111827', marginBottom: 4 }}>
+                {isTrial ? `Gold trial — ${trialDays} day${trialDays === 1 ? '' : 's'} remaining` : `You're on the ${tier.toUpperCase()} plan`}
               </div>
-            )
-          })}
-        </div>
-
-        <p style={{ textAlign: 'center', fontSize: 12.5, color: '#9ca3af', marginTop: 18 }}>
-          Every account starts with a {TRIAL_DAYS}-day free Gold trial. Paid plans are billed via the App Store / Google Play. Prices in INR.
-        </p>
-
-        {/* Redeem code */}
-        <div style={{ maxWidth: 460, margin: '32px auto 0', background: '#fff', border: '1px solid #e5e7eb', borderRadius: 18, padding: 22 }}>
-          <div style={{ fontSize: 13, fontWeight: 800, color: '#052e16', letterSpacing: 0.4, textTransform: 'uppercase', marginBottom: 12 }}>Have a code?</div>
-          <div style={{ display: 'flex', gap: 10 }}>
-            <input value={code} onChange={e => setCode(e.target.value.toUpperCase())} placeholder="Invite / founding code"
-              style={{ flex: 1, background: '#f9fafb', border: '1.5px solid #e5e7eb', borderRadius: 12, padding: '12px 14px', fontSize: 15, color: '#111827', outline: 'none', letterSpacing: 1, fontFamily: FONT }} />
-            <button onClick={redeem} disabled={!code.trim() || busy} style={{ background: 'linear-gradient(135deg,#16a34a,#22c55e)', color: '#fff', border: 'none', borderRadius: 12, padding: '0 22px', fontWeight: 800, fontSize: 14, cursor: !code.trim() || busy ? 'not-allowed' : 'pointer', opacity: !code.trim() || busy ? 0.6 : 1, fontFamily: FONT }}>{busy ? '…' : 'Unlock'}</button>
+              <div style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.5 }}>
+                {isTrial
+                  ? 'All Gold features are active. Membership plans launch soon — we\'ll notify you in-app.'
+                  : 'Start your free trial in the MealWarden app to unlock all Gold features.'}
+              </div>
+            </div>
           </div>
-          {msg && <p style={{ marginTop: 12, fontSize: 13, color: msgOk ? '#16a34a' : '#6b7280', fontWeight: msgOk ? 700 : 500 }}>{msg}</p>}
+        )}
+
+        {/* ── Gold features grid ────────────────────────────────────────── */}
+        <h2 style={{ fontFamily: FONT, fontSize: 20, fontWeight: 900, color: '#111827', marginBottom: 6 }}>
+          What's included in Gold
+        </h2>
+        <p style={{ fontSize: 14, color: '#6b7280', marginBottom: 22 }}>Everything below is yours during your 14-day trial.</p>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 14, marginBottom: 36 }}>
+          {GOLD_FEATURES.map(f => (
+            <div key={f.label} style={{ background: '#fff', border: `1.5px solid ${GOLD}33`, borderRadius: 16, padding: '18px 20px', display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+              <div style={{ fontSize: 26, flexShrink: 0, marginTop: 2 }}>{f.icon}</div>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: '#111827', marginBottom: 4 }}>{f.label}</div>
+                <div style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.55 }}>{f.desc}</div>
+              </div>
+            </div>
+          ))}
         </div>
+
+        {/* ── Coming soon banner ────────────────────────────────────────── */}
+        <div style={{ background: GOLD_S, border: `1.5px solid ${GOLD}44`, borderRadius: 18, padding: '22px 24px', textAlign: 'center', marginBottom: 32 }}>
+          <div style={{ fontSize: 22, marginBottom: 8 }}>🚀</div>
+          <div style={{ fontSize: 16, fontWeight: 900, color: GOLD, marginBottom: 6 }}>Membership plans launching soon</div>
+          <div style={{ fontSize: 14, color: '#92400e', lineHeight: 1.6, maxWidth: 480, margin: '0 auto' }}>
+            We're putting the finishing touches on membership. You'll be notified in-app the moment it's live — no action needed from you.
+          </div>
+        </div>
+
+        {/* ── Redeem code ───────────────────────────────────────────────── */}
+        <div style={{ background: '#fff', border: '1.5px solid #e5e7eb', borderRadius: 18, padding: '24px', maxWidth: 480, margin: '0 auto' }}>
+          <div style={{ fontSize: 13, fontWeight: 800, color: '#052e16', letterSpacing: 0.5, textTransform: 'uppercase' as const, marginBottom: 6 }}>Have a founding member code?</div>
+          <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 16 }}>Unlock membership access instantly below.</div>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <input
+              value={code}
+              onChange={e => setCode(e.target.value.toUpperCase())}
+              placeholder="e.g. MWBETA, FOUNDER"
+              style={{ flex: 1, background: '#f9fafb', border: '1.5px solid #e5e7eb', borderRadius: 12, padding: '12px 14px', fontSize: 15, color: '#111827', outline: 'none', letterSpacing: 1, fontFamily: FONT }}
+            />
+            <button
+              onClick={redeem}
+              disabled={!code.trim() || busy}
+              style={{ background: 'linear-gradient(135deg,#16a34a,#22c55e)', color: '#fff', border: 'none', borderRadius: 12, padding: '0 22px', fontWeight: 800, fontSize: 14, cursor: !code.trim() || busy ? 'not-allowed' : 'pointer', opacity: !code.trim() || busy ? 0.6 : 1, fontFamily: FONT }}
+            >
+              {busy ? '…' : 'Unlock'}
+            </button>
+          </div>
+          {msg && <p style={{ marginTop: 12, fontSize: 13, color: msgOk ? GREEN : '#6b7280', fontWeight: msgOk ? 700 : 500 }}>{msg}</p>}
+        </div>
+
+        <p style={{ textAlign: 'center', fontSize: 12, color: '#9ca3af', marginTop: 24 }}>
+          Every account starts with a {TRIAL_DAYS}-day free Gold trial. Membership plans will be billed via the App Store / Google Play.
+        </p>
       </div>
     </div>
   )

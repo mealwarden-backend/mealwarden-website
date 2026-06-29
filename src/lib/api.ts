@@ -5,7 +5,8 @@
 // same data as the mobile app. GET responses are cached (memory + session) so
 // navigating between pages — and back — is instant instead of refetching.
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'https://mealwarden-backend-production.up.railway.app'
+import { API_BASE_URL } from './constants'
+const API = API_BASE_URL
 
 export function authToken(): string {
   try {
@@ -117,11 +118,19 @@ function writeCache(key: string, data: any) {
   mem.set(key, v)
   try { sessionStorage.setItem('mwc:' + key, JSON.stringify(v)) } catch {}
 }
-function clearCache() {
+export function clearCache() {
   mem.clear()
+  // Also clear all sessionStorage cache entries to prevent cross-user data leak
   try {
-    Object.keys(sessionStorage).filter(k => k.startsWith('mwc:')).forEach(k => sessionStorage.removeItem(k))
-  } catch {}
+    const keysToRemove: string[] = []
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const key = sessionStorage.key(i)
+      if (key && key.startsWith('mwc:')) keysToRemove.push(key)
+    }
+    keysToRemove.forEach(k => sessionStorage.removeItem(k))
+  } catch {
+    // sessionStorage not available (SSR)
+  }
 }
 
 // Cached GET: returns cached data instantly when fresh; de-dupes concurrent calls.

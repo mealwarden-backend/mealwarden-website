@@ -22,13 +22,13 @@ const BOT_RESPONSES: Record<string, string> = {
 
   // Pricing
   'free':     'Every new account starts with a **14-day free Gold trial** — all features unlocked, no card needed. After that you can stay on a functional Free plan or upgrade. 🎉',
-  'price':    'MealWarden plans (₹/month):\n\n🆓 **Free** — ₹0\n🥈 **Silver** — ₹149\n⭐ **Premium** — ₹299\n✦ **Gold** — ₹699\n\nEvery account starts with a 14-day Gold trial!',
-  'pricing':  'Our plans (₹/month):\n\n🆓 **Free** — ₹0\n🥈 **Silver** — ₹149\n⭐ **Premium** — ₹299 (most popular)\n✦ **Gold** — ₹699\n\nAnnual billing saves 33%.',
-  'premium':  '⭐ **Premium** (₹299/month) includes:\n• Everything in Silver\n• Meal Scan — AI calories from a photo\n• Smart grocery lists\n• Priority guardian replies',
-  'gold':     '✦ **Gold** (₹699/month) includes:\n• Everything in Premium\n• Wearable & step sync\n• AI meal swaps\n• Create your own guardian\n• Priority support',
-  'silver':   '🥈 **Silver** (₹149/month) includes:\n• Everything in Free\n• Unlimited diet plans\n• Full recipes & prep tasks\n• Progress analytics',
-  'cost':     'MealWarden starts with a 14-day free Gold trial. Paid plans: Silver ₹149, Premium ₹299, Gold ₹699 per month (annual saves 33%).',
-  'discount': 'Yes! Annual billing saves 33% on all paid plans. 🎉',
+  'price':    '✦ MealWarden membership plans are coming soon! Right now every account starts with a **14-day Gold trial** — all features unlocked, no card needed. 🎉',
+  'pricing':  '✦ Membership plans are launching soon. Every new account gets a **14-day Gold trial** with all features free — no credit card required!',
+  'premium':  '✨ MealWarden\'s Gold plan includes AI Diet Generation, unlimited Meal Scans, unlimited Guardian Chat, 90-day analytics, Smart Grocery Lists, Leagues & MealCoins, and more. Start with your **14-day free trial** today!',
+  'gold':     '✦ **Gold** is MealWarden\'s full-featured plan — personalised diet plans, AI meal scans, unlimited Guardian chat, deep analytics, grocery lists, and leagues. Membership pricing coming soon — enjoy your **free 14-day trial** now!',
+  'silver':   '✨ MealWarden membership tiers are launching soon. For now every account is on a full **14-day Gold trial** — all premium features, completely free!',
+  'cost':     '✦ Membership plans are coming soon! Every account starts with a free 14-day Gold trial — no card, no commitment.',
+  'discount': 'Membership plans (including annual discounts) are launching soon. Stay tuned — you\'ll be the first to know! 🎉',
   'cancel':   'You can cancel anytime — no questions asked, no penalties. Your access continues until the end of your billing period.',
 
   // Features

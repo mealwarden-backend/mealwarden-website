@@ -48,3 +48,7 @@ CLAUDE_CONTEXT.md
 *.claude_context*
 .claude/
 *.ai_notes.md
+
+# Build artifacts — never commit these
+out.zip
+*.bak
