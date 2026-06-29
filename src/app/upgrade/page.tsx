@@ -23,7 +23,7 @@ const GOLD_FEATURES = [
 ]
 
 export default function Upgrade() {
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const router   = useRouter()
 
   const [tier, setTier]           = useState('free')
@@ -37,7 +37,8 @@ export default function Upgrade() {
   const [msg, setMsg]     = useState('')
   const [msgOk, setMsgOk] = useState(false)
 
-  useEffect(() => { if (!user) router.push('/') }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Only redirect once auth has finished loading — prevents flash-then-redirect
+  useEffect(() => { if (!authLoading && !user) router.push('/') }, [authLoading, user]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadSub = async () => {
     try {
@@ -62,7 +63,8 @@ export default function Upgrade() {
     } finally { setBusy(false) }
   }
 
-  if (!user) return null
+  // Show nothing while auth is resolving (prevents content flash before redirect)
+  if (authLoading || !user) return null
 
   return (
     <div style={{ minHeight: '100vh', background: '#f9fafb', fontFamily: FONT }}>
