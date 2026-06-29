@@ -90,10 +90,10 @@ export default function Features() {
   }, [])
 
   return (
-    <section id="features" 
+    <section id="features"
       ref={sectionRef}
+      className="section-pad"
       style={{
-        padding: '120px 48px',
         maxWidth: 1200,
         margin: '0 auto',
       }}
@@ -115,12 +115,9 @@ export default function Features() {
           </span>
         </div>
 
-        <h2 style={{
+        <h2 className="section-h2" style={{
           fontFamily: 'var(--font-jakarta), Plus Jakarta Sans, sans-serif',
-          fontSize: 52,
           fontWeight: 800,
-          letterSpacing: -2,
-          color: '#052e16',
           lineHeight: 1.1,
           marginBottom: 18,
         }}>
@@ -140,11 +137,7 @@ export default function Features() {
       </div>
 
       {/* Grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
-        gap: 22,
-      }}>
+      <div className="features-grid">
         {features.map((f, i) => (
           <div
             key={i}

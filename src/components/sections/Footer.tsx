@@ -65,8 +65,8 @@ export default function Footer() {
     <footer style={{ background: '#052e16', fontFamily: FONT }}>
 
       {/* ── Top Section ── */}
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '80px 48px 60px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr 1fr 1fr', gap: 48 }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto' }} className="footer-top-pad">
+        <div className="footer-grid">
 
           {/* Brand + Newsletter */}
           <div>
@@ -229,12 +229,12 @@ export default function Footer() {
       </div>
 
       {/* ── Divider ── */}
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 48px' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 20px' }}>
         <div style={{ height: 1, background: 'rgba(255,255,255,0.07)' }} />
       </div>
 
       {/* ── Bottom Bar ── */}
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 48px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto' }} className="footer-bottom-pad">
 
         <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', fontFamily: FONT }}>
           © 2025 MealWarden Technologies Pvt. Ltd. · Made with ❤️ in Hyderabad 🇮🇳

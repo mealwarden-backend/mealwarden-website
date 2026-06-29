@@ -74,7 +74,8 @@ export default function Testimonials() {
   return (
     <section id="testimonials"
       ref={sectionRef}
-      style={{ padding: '120px 48px', maxWidth: 1200, margin: '0 auto' }}
+      className="section-pad"
+      style={{ maxWidth: 1200, margin: '0 auto' }}
     >
       {/* Header */}
       <div className="reveal" style={{ textAlign: 'center', marginBottom: 72 }}>
@@ -88,10 +89,10 @@ export default function Testimonials() {
           </span>
         </div>
 
-        <h2 style={{
+        <h2 className="section-h2" style={{
           fontFamily: 'var(--font-jakarta), Plus Jakarta Sans, sans-serif',
-          fontSize: 52, fontWeight: 800,
-          letterSpacing: -2, color: '#052e16', lineHeight: 1.1, marginBottom: 18,
+          fontWeight: 800,
+          lineHeight: 1.1, marginBottom: 18,
         }}>
           Real People,<br />
           <span className="gradient-text-warm">Real Transformations</span>
@@ -103,15 +104,7 @@ export default function Testimonials() {
       </div>
 
       {/* Stats row */}
-      <div className="reveal" style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
-        gap: 2,
-        background: '#052e16',
-        borderRadius: 24,
-        overflow: 'hidden',
-        marginBottom: 64,
-      }}>
+      <div className="reveal testi-stats-grid">
         {stats.map((s, i) => (
           <div key={i} style={{
             padding: '32px 24px',
@@ -136,7 +129,7 @@ export default function Testimonials() {
       </div>
 
       {/* Testimonial cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
+      <div className="testi-cards-grid">
         {testimonials.map((t, i) => (
           <div
             key={i}

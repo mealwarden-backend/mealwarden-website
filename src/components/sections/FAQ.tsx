@@ -61,9 +61,10 @@ export default function FAQ() {
       <section
         id="faq"
         ref={sectionRef}
-        style={{ padding: '120px 48px', background: '#f9fafb' }}
+        className="section-pad"
+        style={{ background: '#f9fafb' }}
       >
-        <div style={{ maxWidth: 860, margin: '0 auto' }}>
+        <div style={{ maxWidth: 860, margin: '0 auto', padding: '0 4px' }}>
 
           {/* Header */}
           <div className="reveal" style={{ textAlign: 'center', marginBottom: 64 }}>
@@ -80,10 +81,9 @@ export default function FAQ() {
               </span>
             </div>
 
-            <h2 style={{
+            <h2 className="section-h2" style={{
               fontFamily: 'var(--font-jakarta), Plus Jakarta Sans, sans-serif',
-              fontSize: 52, fontWeight: 800,
-              letterSpacing: -2, color: '#052e16', lineHeight: 1.1, marginBottom: 18,
+              fontWeight: 800, lineHeight: 1.1, marginBottom: 18,
             }}>
               Got Questions?<br />
               <span className="gradient-text-green">We've Got Answers.</span>

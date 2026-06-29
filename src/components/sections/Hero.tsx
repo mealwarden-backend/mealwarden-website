@@ -179,10 +179,7 @@ export default function Hero() {
           </h1>
 
           {/* Subtitle */}
-          <p className="hero-in-d2" style={{
-            fontSize: 18, color: '#4b5563',
-            lineHeight: 1.8, maxWidth: 480, marginBottom: 36,
-          }}>
+          <p className="hero-in-d2 hero-subtitle">
             MealWarden tracks your diet, reminds you to eat, preps your meals overnight, and guards your nutrition goals — intelligently, 24/7. Never break your streak again.
           </p>
 
@@ -227,7 +224,7 @@ export default function Hero() {
               ['🌍', 'For anyone, anywhere'],
             ].map(([v, l]) => (
               <div key={l}>
-                <div style={{ fontFamily: 'var(--font-jakarta), Plus Jakarta Sans, sans-serif', fontSize: 28, fontWeight: 800, color: '#052e16', lineHeight: 1 }}>{v}</div>
+                <div className="hero-stat-val" style={{ fontFamily: 'var(--font-jakarta), Plus Jakarta Sans, sans-serif' }}>{v}</div>
                 <div style={{ fontSize: 13, color: '#6b7280', marginTop: 5, fontWeight: 500 }}>{l}</div>
               </div>
             ))}
@@ -253,7 +250,7 @@ export default function Hero() {
           </div>
 
           {/* Phone A — center */}
-          <div className="float-a" style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', zIndex: 3 }}>
+          <div className="float-a hero-phone-center" style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', zIndex: 3 }}>
             <PhoneFrame shadow="0 48px 96px rgba(22,163,74,0.35)">
               <HomeScreen />
             </PhoneFrame>
@@ -269,7 +266,7 @@ export default function Hero() {
           </div>
 
           {/* Badge — Streak */}
-          <div className="lift-sm" style={{
+          <div className="lift-sm hero-badge" style={{
             position: 'absolute', top: '8%', right: '4%',
             background: '#fff', borderRadius: 16, padding: '10px 16px',
             boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
@@ -283,7 +280,7 @@ export default function Hero() {
           </div>
 
           {/* Badge — Meal logged */}
-          <div className="lift-sm" style={{
+          <div className="lift-sm hero-badge" style={{
             position: 'absolute', bottom: '14%', left: '2%',
             background: '#f0fdf4', border: '1px solid #bbf7d0',
             borderRadius: 16, padding: '10px 16px',

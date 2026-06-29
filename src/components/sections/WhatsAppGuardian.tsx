@@ -37,15 +37,14 @@ export default function WhatsAppGuardian() {
   }, [visibleMsgs])
 
   return (
-    <section ref={sectionRef} style={{ padding: '0 48px 120px' }}>
+    <section ref={sectionRef} style={{ padding: '0 20px 80px' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-        <div style={{
-          borderRadius: 36,
-          background: 'linear-gradient(135deg, #052e16 0%, #064e3b 50%, #065f46 100%)',
-          padding: '90px 72px',
-          overflow: 'hidden',
-          position: 'relative',
-        }}>
+        <div
+          className="wa-inner"
+          style={{
+            background: 'linear-gradient(135deg, #052e16 0%, #064e3b 50%, #065f46 100%)',
+          }}
+        >
           {/* Decorative blobs */}
           <div style={{
             position: 'absolute', top: -80, right: -80,
@@ -58,7 +57,7 @@ export default function WhatsAppGuardian() {
             background: 'rgba(34,197,94,0.05)', pointerEvents: 'none',
           }} />
 
-          <div style={{ display: 'flex', gap: 80, alignItems: 'center', position: 'relative', zIndex: 1 }}>
+          <div className="wa-layout">
 
             {/* ── Left: Content ── */}
             <div className="reveal-left" style={{ flex: 1 }}>
@@ -83,10 +82,10 @@ export default function WhatsAppGuardian() {
                 </div>
               </div>
 
-              <h2 style={{
+              <h2 className="section-h2-lg" style={{
                 fontFamily: 'var(--font-jakarta), Plus Jakarta Sans, sans-serif',
-                fontSize: 48, fontWeight: 800,
-                letterSpacing: -1.5, color: '#fff', lineHeight: 1.1, marginBottom: 22,
+                fontWeight: 800,
+                color: '#fff', lineHeight: 1.1, marginBottom: 22,
               }}>
                 Your Guardian Lives<br />
                 <span style={{ color: '#4ade80' }}>In Your WhatsApp</span>
@@ -100,7 +99,7 @@ export default function WhatsAppGuardian() {
               </p>
 
               {/* Features grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, marginBottom: 44 }}>
+              <div className="wa-features-grid">
                 {[
                   ['⏰', 'Meal alerts on time'],
                   ['✅', 'Log meals by replying'],

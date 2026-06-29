@@ -30,14 +30,14 @@ export default function Pricing() {
   }
 
   return (
-    <section id="pricing" ref={sectionRef} style={{ background: '#f9fafb', padding: '120px 48px' }}>
+    <section id="pricing" ref={sectionRef} className="section-pad" style={{ background: '#f9fafb' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         {/* Header */}
         <div className="reveal" style={{ textAlign: 'center', marginBottom: 40 }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 100, padding: '6px 18px', marginBottom: 20 }}>
             <span style={{ fontSize: 12, fontWeight: 700, color: '#16a34a', letterSpacing: 1.5, textTransform: 'uppercase' }}>Pricing</span>
           </div>
-          <h2 style={{ fontFamily: FONT, fontSize: 52, fontWeight: 800, letterSpacing: -2, color: '#052e16', lineHeight: 1.1, marginBottom: 18 }}>
+          <h2 className="section-h2" style={{ fontFamily: FONT, fontWeight: 800, lineHeight: 1.1, marginBottom: 18 }}>
             Start Free.<br /><span className="gradient-text-green">Upgrade When Ready.</span>
           </h2>
           <p style={{ fontSize: 17, color: '#6b7280', maxWidth: 520, margin: '0 auto 18px', lineHeight: 1.8 }}>
@@ -112,7 +112,7 @@ export default function Pricing() {
 
         {/* Trust row */}
         <div className="reveal" style={{ textAlign: 'center', marginTop: 48 }}>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 40, flexWrap: 'wrap' }}>
+          <div className="trust-row">
             {[
               ['🛡️', `${TRIAL_DAYS}-day free Gold trial`],
               ['🌍', 'Works worldwide'],

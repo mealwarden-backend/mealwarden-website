@@ -56,7 +56,8 @@ export default function HowItWorks() {
     <section
       id="how-it-works"
       ref={sectionRef}
-      style={{ background: '#f9fafb', padding: '120px 48px' }}
+      className="section-pad"
+      style={{ background: '#f9fafb' }}
     >
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
 
@@ -75,10 +76,9 @@ export default function HowItWorks() {
             </span>
           </div>
 
-          <h2 style={{
+          <h2 className="section-h2" style={{
             fontFamily: 'var(--font-jakarta), Plus Jakarta Sans, sans-serif',
-            fontSize: 52, fontWeight: 800,
-            letterSpacing: -2, color: '#052e16',
+            fontWeight: 800,
             lineHeight: 1.1, marginBottom: 18,
           }}>
             Up & Running<br />
@@ -97,22 +97,9 @@ export default function HowItWorks() {
         <div style={{ position: 'relative' }}>
 
           {/* Connector line */}
-          <div style={{
-            position: 'absolute',
-            top: 52,
-            left: 'calc(16.5% + 28px)',
-            right: 'calc(16.5% + 28px)',
-            height: 2,
-            background: 'linear-gradient(to right, #16a34a, #3b82f6, #a855f7)',
-            borderRadius: 2,
-            zIndex: 0,
-          }} />
+          <div className="how-connector" />
 
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: 28, position: 'relative', zIndex: 1,
-          }}>
+          <div className="how-grid">
             {steps.map((s, i) => (
               <div key={i} className={`reveal delay-${i + 1}`}>
 

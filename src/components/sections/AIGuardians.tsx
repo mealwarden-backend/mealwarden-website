@@ -34,8 +34,8 @@ export default function AIGuardians() {
   }, [visibleMessages])
 
   return (
-    <section ref={sectionRef} style={{ padding: '120px 48px', maxWidth: 1200, margin: '0 auto' }}>
-      <div style={{ display: 'flex', gap: 72, alignItems: 'center', flexWrap: 'wrap' }}>
+    <section ref={sectionRef} className="section-pad" style={{ maxWidth: 1200, margin: '0 auto' }}>
+      <div className="guardians-layout">
 
         {/* ── Left ── */}
         <div className="reveal-left" style={{ flex: 1, minWidth: 320 }}>
@@ -43,7 +43,7 @@ export default function AIGuardians() {
             <span style={{ fontSize: 12, fontWeight: 700, color: '#16a34a', letterSpacing: 1.5, textTransform: 'uppercase' }}>🛡️ Your Guardian</span>
           </div>
 
-          <h2 style={{ fontFamily: FONT, fontSize: 48, fontWeight: 800, letterSpacing: -1.5, color: '#052e16', lineHeight: 1.1, marginBottom: 20 }}>
+          <h2 className="section-h2-lg" style={{ fontFamily: FONT, fontWeight: 800, lineHeight: 1.1, marginBottom: 20 }}>
             Meet Meenu<br /><span className="gradient-text-green">& Maddy.</span>
           </h2>
 

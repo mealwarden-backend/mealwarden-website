@@ -21,15 +21,13 @@ export default function FinalCTA() {
   }, [])
 
   return (
-    <section ref={sectionRef} style={{ padding: '0 48px 120px' }}>
+    <section ref={sectionRef} style={{ padding: '0 20px 80px' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         <div
-          className="reveal"
+          className="reveal final-cta-inner"
           style={{
             background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 50%, #d1fae5 100%)',
             border: '1.5px solid #bbf7d0',
-            borderRadius: 40, padding: '100px 60px',
-            textAlign: 'center', position: 'relative', overflow: 'hidden',
           }}
         >
           {/* Blobs */}
@@ -51,11 +49,10 @@ export default function FinalCTA() {
             </div>
 
             {/* Headline */}
-            <h2 style={{
+            <h2 className="final-cta-h2" style={{
               fontFamily: 'var(--font-jakarta), Plus Jakarta Sans, sans-serif',
-              fontSize: 60, fontWeight: 800,
-              letterSpacing: -2.5, color: '#052e16',
-              lineHeight: 1.05, marginBottom: 24,
+              fontWeight: 800,
+              lineHeight: 1.05,
             }}>
               Stop Breaking<br />
               Your Diet Goals.<br />
@@ -113,7 +110,7 @@ export default function FinalCTA() {
             </div>
 
             {/* Trust badges */}
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 40, flexWrap: 'wrap' }}>
+            <div className="trust-row">
               {[
                 ['🔒', 'End-to-end encrypted'],
                 ['🇮🇳', 'Made in India'],

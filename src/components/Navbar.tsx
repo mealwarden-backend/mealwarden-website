@@ -38,6 +38,7 @@ export default function Navbar() {
   const [showLogin, setShowLogin]        = useState(false)
   const [showDropdown, setShowDropdown]  = useState(false)
   const [showBell, setShowBell]          = useState(false)
+  const [showMobileMenu, setShowMobileMenu] = useState(false)
   const [notifs, setNotifs]              = useState<NotifItem[]>([])
   const [unread, setUnread]              = useState(0)
   const [notifsLoaded, setNotifsLoaded]  = useState(false)
@@ -100,12 +101,12 @@ export default function Navbar() {
 
   return (
     <>
-      <nav style={{
+      <nav className="nav-bar" style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000,
         background: scrolled ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.85)',
         backdropFilter: 'blur(20px)',
         borderBottom: scrolled ? '1px solid #e5e7eb' : '1px solid rgba(187,247,208,0.3)',
-        padding: '0 48px', height: 68,
+        height: 68,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         transition: 'all 0.3s ease', fontFamily: FONT,
       }}>
@@ -115,8 +116,8 @@ export default function Navbar() {
           <span style={{ fontFamily: FONT_SYNE, fontWeight: 800, fontSize: 21, color: '#052e16', letterSpacing: -0.5 }}>MealWarden</span>
         </div>
 
-        {/* Nav Links */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+        {/* Nav Links — desktop only */}
+        <div className="nav-links-desktop">
           <button onClick={() => router.push('/')} style={navBtnStyle}
             onMouseEnter={e => { e.currentTarget.style.color = '#16a34a'; e.currentTarget.style.background = '#f0fdf4' }}
             onMouseLeave={e => { e.currentTarget.style.color = '#374151'; e.currentTarget.style.background = 'none' }}>
@@ -141,8 +142,19 @@ export default function Navbar() {
           </button>
         </div>
 
-        {/* Right Side */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        {/* Hamburger — mobile only */}
+        <button
+          className="nav-hamburger"
+          aria-label="Open menu"
+          onClick={() => setShowMobileMenu(v => !v)}
+        >
+          <span style={{ transform: showMobileMenu ? 'rotate(45deg) translate(5px, 5px)' : 'none' }} />
+          <span style={{ opacity: showMobileMenu ? 0 : 1 }} />
+          <span style={{ transform: showMobileMenu ? 'rotate(-45deg) translate(5px, -5px)' : 'none' }} />
+        </button>
+
+        {/* Right Side — desktop buttons */}
+        <div className="nav-right-desktop" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {user ? (
             <>
               {/* Bell */}
@@ -314,6 +326,44 @@ export default function Navbar() {
           )}
         </div>
       </nav>
+
+      {/* Mobile slide-down menu */}
+      <div className={`nav-mobile-menu ${showMobileMenu ? 'open' : ''}`}>
+        <button className="nav-mobile-btn" onClick={() => { router.push('/'); setShowMobileMenu(false) }}>🏠 Home</button>
+        {navLinks.map(l => (
+          <button key={l.id} className="nav-mobile-btn" onClick={() => { scrollTo(l.id); setShowMobileMenu(false) }}>{l.label}</button>
+        ))}
+        <button className="nav-mobile-btn" onClick={() => { router.push('/about'); setShowMobileMenu(false) }}>About</button>
+        <button className="nav-mobile-btn" onClick={() => { router.push('/contact'); setShowMobileMenu(false) }}>Contact</button>
+        <div className="nav-mobile-divider" />
+        <div className="nav-mobile-actions">
+          {user ? (
+            <button className="nav-mobile-btn" onClick={() => { router.push('/dashboard'); setShowMobileMenu(false) }}>📊 Dashboard</button>
+          ) : (
+            <>
+              <button
+                className="nav-mobile-btn"
+                onClick={() => { setShowLogin(true); setShowMobileMenu(false) }}
+                style={{ border: '1.5px solid #e5e7eb', borderRadius: 10, textAlign: 'center' }}
+              >
+                Log In
+              </button>
+              <button
+                onClick={() => { setShowLogin(true); setShowMobileMenu(false) }}
+                style={{
+                  padding: '12px 20px', background: 'linear-gradient(135deg,#16a34a,#22c55e)',
+                  border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, color: '#fff',
+                  cursor: 'pointer', fontFamily: FONT, boxShadow: '0 4px 14px rgba(22,163,74,0.35)',
+                  textAlign: 'center',
+                }}
+              >
+                Get Started Free →
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
       <LoginModal isOpen={showLogin} onClose={() => setShowLogin(false)} />
     </>
   )
