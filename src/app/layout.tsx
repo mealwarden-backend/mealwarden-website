@@ -29,6 +29,10 @@ export const metadata: Metadata = {
     shortcut: '/logo-mark.png',
     apple: '/logo-mark.png',
   },
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+  },
 }
 
 export default function RootLayout({
