@@ -1,15 +1,18 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { PLANS, TRIAL_DAYS } from '@/lib/appData'
-import ComingSoonModal from '@/components/ComingSoonModal'
+import { useRouter } from 'next/navigation'
+import { PLANS, TRIAL_DAYS, launchDaysLeft } from '@/lib/appData'
 
 const FONT = 'var(--font-jakarta), Plus Jakarta Sans, sans-serif'
 
 export default function Pricing() {
   const sectionRef = useRef<HTMLElement>(null)
-  const [annual, setAnnual] = useState(true)
-  const [cs, setCs] = useState(false)
+  const router     = useRouter()
+  const [annual, setAnnual]     = useState(false)
+  const [daysLeft, setDaysLeft] = useState(0)
+
+  useEffect(() => { setDaysLeft(launchDaysLeft()) }, [])
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -21,17 +24,25 @@ export default function Pricing() {
   }, [])
 
   const priceMain = (p: typeof PLANS[number]) => {
-    if (p.monthly === 0) return '₹0'
-    return annual ? `₹${Math.round(p.annual / 12)}` : `₹${p.monthly}`
+    if (p.launchMonthly === 0) return '₹0'
+    return annual ? `₹${Math.round(p.launchAnnual / 12)}` : `₹${p.launchMonthly}`
   }
-  const priceSub = (p: typeof PLANS[number]) => {
-    if (p.monthly === 0) return 'forever'
-    return annual ? `/mo · billed ₹${p.annual}/yr` : '/month'
+  const priceOrig = (p: typeof PLANS[number]) => {
+    if (p.originalMonthly === 0) return null
+    return annual ? `₹${Math.round(p.originalAnnual / 12)}` : `₹${p.originalMonthly}`
+  }
+  const savePct = (p: typeof PLANS[number]) => {
+    if (p.originalMonthly === 0) return null
+    const orig   = annual ? Math.round(p.originalAnnual / 12) : p.originalMonthly
+    const launch = annual ? Math.round(p.launchAnnual / 12)   : p.launchMonthly
+    const pct    = Math.round(((orig - launch) / orig) * 100)
+    return pct > 0 ? pct : null
   }
 
   return (
     <section id="pricing" ref={sectionRef} className="section-pad" style={{ background: '#f9fafb' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+
         {/* Header */}
         <div className="reveal" style={{ textAlign: 'center', marginBottom: 40 }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 100, padding: '6px 18px', marginBottom: 20 }}>
@@ -44,6 +55,13 @@ export default function Pricing() {
             Every new account starts with a <strong>{TRIAL_DAYS}-day free Gold trial</strong> — all features unlocked, no card needed.
           </p>
 
+          {/* Launch offer banner */}
+          {daysLeft > 0 && (
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#fef3c7', border: '1px solid #fcd34d', borderRadius: 100, padding: '7px 20px', marginBottom: 18, fontSize: 13, color: '#92400e', fontWeight: 700 }}>
+              🔥 Launch offer — {daysLeft} day{daysLeft === 1 ? '' : 's'} left · Ends Aug 31, 2026
+            </div>
+          )}
+
           {/* Billing toggle */}
           <div style={{ display: 'inline-flex', alignItems: 'center', background: '#e5e7eb', borderRadius: 100, padding: 4 }}>
             {['Monthly', 'Annual · Save 33%'].map((label, i) => (
@@ -54,6 +72,7 @@ export default function Pricing() {
                   color: (i === 1) === annual ? '#052e16' : '#6b7280',
                   border: 'none', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: FONT,
                   boxShadow: (i === 1) === annual ? '0 2px 10px rgba(0,0,0,0.1)' : 'none',
+                  transition: 'all 0.2s',
                 }}>
                 {label}
               </button>
@@ -62,52 +81,92 @@ export default function Pricing() {
         </div>
 
         {/* Plans grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 18 }}>
-          {PLANS.map((plan) => (
-            <div key={plan.key} className="price-card reveal"
-              style={{
-                background: plan.popular ? '#f0fdf4' : '#fff', borderRadius: 24, padding: '34px 26px',
-                border: `2px solid ${plan.popular ? '#16a34a' : '#e5e7eb'}`, position: 'relative',
-                boxShadow: plan.popular ? '0 20px 60px rgba(22,163,74,0.18)' : '0 4px 24px rgba(0,0,0,0.05)',
-              }}>
-              {plan.popular && (
-                <div style={{ position: 'absolute', top: -15, left: '50%', transform: 'translateX(-50%)', background: 'linear-gradient(135deg,#16a34a,#22c55e)', color: '#fff', fontSize: 12, fontWeight: 700, padding: '5px 20px', borderRadius: 100, whiteSpace: 'nowrap', fontFamily: FONT, boxShadow: '0 4px 12px rgba(22,163,74,0.4)' }}>
-                  ★ MOST POPULAR
-                </div>
-              )}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 18 }}>
+          {PLANS.map((plan) => {
+            const orig  = priceOrig(plan)
+            const pct   = savePct(plan)
+            const isPop = !!plan.popular
 
-              <div style={{ fontSize: 13, fontWeight: 700, color: plan.popular ? '#16a34a' : '#6b7280', marginBottom: 8, letterSpacing: 0.5 }}>{plan.name}</div>
-              <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 8 }}>{plan.tagline}</div>
-
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 4 }}>
-                <span style={{ fontFamily: FONT, fontSize: 42, fontWeight: 800, color: '#052e16', letterSpacing: -2, lineHeight: 1 }}>{priceMain(plan)}</span>
-              </div>
-              <p style={{ fontSize: 12.5, color: '#6b7280', marginBottom: 22, paddingBottom: 22, borderBottom: '1px solid #e5e7eb' }}>{priceSub(plan)}</p>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 26 }}>
-                {plan.features.map((f, j) => (
-                  <div key={j} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                    <div style={{ width: 18, height: 18, borderRadius: '50%', background: plan.popular ? '#16a34a' : '#f0fdf4', border: `1.5px solid ${plan.popular ? '#16a34a' : '#bbf7d0'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
-                      <span style={{ fontSize: 10, color: plan.popular ? '#fff' : '#16a34a' }}>✓</span>
-                    </div>
-                    <span style={{ fontSize: 13.5, color: '#374151', lineHeight: 1.5 }}>{f}</span>
-                  </div>
-                ))}
-              </div>
-
-              <button className="btn-primary" onClick={() => setCs(true)}
+            return (
+              <div key={plan.key} className="price-card reveal"
                 style={{
-                  width: '100%', padding: '14px', borderRadius: 12,
-                  background: plan.popular ? 'linear-gradient(135deg,#16a34a,#22c55e)' : '#f3f4f6',
-                  color: plan.popular ? '#fff' : '#374151',
-                  fontWeight: 700, fontSize: 14.5, cursor: 'pointer',
-                  border: plan.popular ? '1.5px solid transparent' : '1.5px solid #e5e7eb', fontFamily: FONT,
-                  boxShadow: plan.popular ? '0 8px 24px rgba(22,163,74,0.3)' : 'none',
+                  background: isPop ? 'linear-gradient(160deg,#f0fdf4,#dcfce7)' : '#fff',
+                  borderRadius: 24, padding: '30px 24px',
+                  border: `2px solid ${isPop ? '#16a34a' : '#e5e7eb'}`, position: 'relative',
+                  boxShadow: isPop ? '0 20px 60px rgba(22,163,74,0.18)' : '0 4px 24px rgba(0,0,0,0.05)',
                 }}>
-                {plan.key === 'free' ? 'Start free' : `Choose ${plan.name}`} →
-              </button>
-            </div>
-          ))}
+                {isPop && (
+                  <div style={{ position: 'absolute', top: -1, left: '50%', transform: 'translateX(-50%)', background: 'linear-gradient(135deg,#16a34a,#22c55e)', color: '#fff', fontSize: 11, fontWeight: 800, padding: '5px 18px', borderRadius: '0 0 12px 12px', whiteSpace: 'nowrap', fontFamily: FONT, boxShadow: '0 4px 12px rgba(22,163,74,0.4)' }}>
+                    ★ MOST POPULAR
+                  </div>
+                )}
+
+                {/* Emoji + name */}
+                <div style={{ fontSize: 26, marginBottom: 8, marginTop: isPop ? 12 : 0 }}>{plan.emoji}</div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: isPop ? '#052e16' : '#374151', marginBottom: 3 }}>{plan.name}</div>
+                <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 12 }}>{plan.tagline}</div>
+
+                {/* AI limits pill */}
+                {plan.genLimit > 0 && (
+                  <div style={{ display: 'inline-block', background: isPop ? 'rgba(22,163,74,0.12)' : '#f3f4f6', borderRadius: 100, padding: '3px 10px', fontSize: 11, fontWeight: 700, color: isPop ? '#16a34a' : '#374151', marginBottom: 14 }}>
+                    ✦ {plan.genLimit} gen{plan.genLimit > 1 ? 's' : ''} + {plan.uploadLimit} upload{plan.uploadLimit > 1 ? 's' : ''} / mo
+                  </div>
+                )}
+
+                {/* Strikethrough + savings pill */}
+                <div style={{ minHeight: 22, marginBottom: 4 }}>
+                  {orig && (
+                    <span style={{ fontSize: 13, color: '#9ca3af', textDecoration: 'line-through', marginRight: 6 }}>{orig}</span>
+                  )}
+                  {pct && (
+                    <span style={{ fontSize: 11, fontWeight: 800, background: '#fef3c7', color: '#92400e', borderRadius: 100, padding: '2px 8px' }}>{pct}% off</span>
+                  )}
+                </div>
+
+                {/* Launch price */}
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 4 }}>
+                  <span style={{ fontFamily: FONT, fontSize: 40, fontWeight: 800, color: '#052e16', letterSpacing: -2, lineHeight: 1 }}>{priceMain(plan)}</span>
+                  {plan.launchMonthly > 0 && <span style={{ fontSize: 13, color: '#6b7280' }}>/mo</span>}
+                </div>
+                <p style={{ fontSize: 12.5, color: '#6b7280', marginBottom: 18, paddingBottom: 18, borderBottom: `1px solid ${isPop ? 'rgba(22,163,74,0.2)' : '#e5e7eb'}` }}>
+                  {plan.launchMonthly === 0 ? 'forever' : annual ? `billed ₹${plan.launchAnnual}/yr` : 'billed monthly'}
+                </p>
+
+                {/* Features */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 11, marginBottom: 24 }}>
+                  {plan.features.map((f, j) => (
+                    <div key={j} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                      <div style={{ width: 17, height: 17, borderRadius: '50%', background: isPop ? '#16a34a' : '#f0fdf4', border: `1.5px solid ${isPop ? '#16a34a' : '#bbf7d0'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
+                        <span style={{ fontSize: 9, color: isPop ? '#fff' : '#16a34a' }}>✓</span>
+                      </div>
+                      <span style={{ fontSize: 13, color: '#374151', lineHeight: 1.5 }}>{f}</span>
+                    </div>
+                  ))}
+                  {plan.soon?.map((f) => (
+                    <div key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, opacity: 0.55 }}>
+                      <div style={{ width: 17, height: 17, borderRadius: '50%', background: '#f3f4f6', border: '1.5px solid #e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
+                        <span style={{ fontSize: 9 }}>🚀</span>
+                      </div>
+                      <span style={{ fontSize: 12.5, color: '#6b7280', lineHeight: 1.5 }}>{f} <span style={{ fontSize: 10, fontWeight: 700 }}>Soon</span></span>
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => router.push('/upgrade')}
+                  style={{
+                    width: '100%', padding: '14px', borderRadius: 12,
+                    background: isPop ? 'linear-gradient(135deg,#16a34a,#22c55e)' : plan.key === 'free' ? '#f3f4f6' : '#052e16',
+                    color: plan.key === 'free' ? '#374151' : '#fff',
+                    fontWeight: 700, fontSize: 14.5, cursor: 'pointer',
+                    border: isPop ? '1.5px solid transparent' : '1.5px solid #e5e7eb', fontFamily: FONT,
+                    boxShadow: isPop ? '0 8px 24px rgba(22,163,74,0.3)' : 'none',
+                  }}>
+                  {plan.key === 'free' ? 'Start free' : `Choose ${plan.name}`} →
+                </button>
+              </div>
+            )
+          })}
         </div>
 
         {/* Trust row */}
@@ -125,11 +184,9 @@ export default function Pricing() {
               </div>
             ))}
           </div>
-          <p style={{ fontSize: 12.5, color: '#9ca3af', marginTop: 18 }}>Paid plans are billed through the App Store and Google Play. Prices in INR.</p>
+          <p style={{ fontSize: 12.5, color: '#9ca3af', marginTop: 18 }}>Paid plans are billed through the App Store, Google Play or Razorpay. Prices in INR. Launch pricing valid until Aug 31, 2026.</p>
         </div>
       </div>
-
-      <ComingSoonModal open={cs} onClose={() => setCs(false)} />
     </section>
   )
 }

@@ -279,7 +279,8 @@ export default function Navbar() {
                         { icon: '🪙', label: 'Coin Center',     path: '/coins' },
                         { icon: '🥗', label: 'My Nutrition',    path: '/nutrition' },
                         { icon: '⚙️', label: 'Settings',        path: '/settings' },
-                        { icon: '💎', label: 'Upgrade to Gold', path: '/upgrade' },
+                        { icon: '💎', label: 'Plans',           path: '/upgrade' },
+                        { icon: '⚡', label: 'MW Credits',      path: '/mw-credits' },
                       ].map(item => (
                         <div key={item.label} onClick={() => { router.push(item.path); setShowDropdown(false) }}
                           style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 10, cursor: 'pointer' }}
