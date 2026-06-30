@@ -1082,6 +1082,9 @@ export default function Dashboard() {
       const payload: any = { mealId: m.id, mealName: m.name, mealType: 'other' }
       if (m.kcal) payload.calories = m.kcal
       if (m.protein) payload.proteinG = m.protein
+      if ((m as any).carbsG) payload.carbsG = (m as any).carbsG
+      if ((m as any).fatG) payload.fatG = (m as any).fatG
+      if ((m as any).fiberG > 0) payload.fiberG = (m as any).fiberG
       api.toggleLog(payload).catch(() => {
         setMeals(prev => prev.map((mm, idx) => idx === i ? { ...mm, done: wasDone } : mm))
       })

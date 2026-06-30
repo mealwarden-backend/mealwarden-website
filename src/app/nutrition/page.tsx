@@ -169,6 +169,7 @@ export default function Nutrition() {
       if (meal.protein) payload.proteinG = meal.protein
       if (meal.carbsG)  payload.carbsG   = meal.carbsG
       if (meal.fatG)    payload.fatG     = meal.fatG
+      if (meal.fiberG > 0) payload.fiberG = meal.fiberG
       await api.toggleLog(payload)
     } catch {
       // Rollback on error
