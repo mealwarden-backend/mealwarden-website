@@ -92,10 +92,15 @@ export default function GenerateDietWizard({ guardianName, profile, onClose }: {
   const [cookingTime, setCookingTime] = useState<number | null>(null)
   const [lifestyle, setLifestyle]     = useState('')
 
-  // Gen status — remaining this week
-  const [genStatus, setGenStatus] = useState<{ remaining: number; windowResetsAt: string | null } | null>(null)
+  // Gen status — monthly remaining from subscription
+  const [genStatus, setGenStatus] = useState<{ genRemaining: number; genLimit: number; genCredits: number } | null>(null)
   useEffect(() => {
-    (api as any).getGenStatus?.().then((s: any) => setGenStatus(s)).catch(() => {})
+    api.getSubscription().then((res: any) => {
+      const d = res?.data || res
+      const mu = d?.monthlyUsage || {}
+      const credits = d?.mwCredits?.generate ?? 0
+      setGenStatus({ genRemaining: mu.genRemaining ?? 0, genLimit: mu.genLimit ?? 1, genCredits: credits })
+    }).catch(() => {})
   }, [])
 
   const toggle = (arr: string[], set: (a: string[]) => void, v: string) => set(arr.includes(v) ? arr.filter(x => x !== v) : [...arr, v])
@@ -197,8 +202,12 @@ export default function GenerateDietWizard({ guardianName, profile, onClose }: {
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               {genStatus != null && (
-                <div style={{ fontSize: 11, fontWeight: 700, color: genStatus.remaining > 0 ? '#e9d5ff' : '#fca5a5', background: 'rgba(255,255,255,0.12)', borderRadius: 20, padding: '4px 10px', whiteSpace: 'nowrap' }}>
-                  {genStatus.remaining > 0 ? `${genStatus.remaining}/5 left` : 'Limit reached'}
+                <div style={{ fontSize: 11, fontWeight: 700, color: (genStatus.genRemaining > 0 || genStatus.genCredits > 0) ? '#e9d5ff' : '#fca5a5', background: 'rgba(255,255,255,0.12)', borderRadius: 20, padding: '4px 10px', whiteSpace: 'nowrap' }}>
+                  {genStatus.genRemaining > 0
+                    ? `${genStatus.genRemaining}/${genStatus.genLimit} left${genStatus.genCredits > 0 ? ` · ⚡${genStatus.genCredits}` : ''}`
+                    : genStatus.genCredits > 0
+                      ? `⚡${genStatus.genCredits} credits`
+                      : 'Limit reached'}
                 </div>
               )}
               {!busy && <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', fontSize: 18, cursor: 'pointer' }}>×</button>}

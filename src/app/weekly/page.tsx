@@ -75,7 +75,7 @@ export default function Weekly() {
       await api.toggleLog({
         mealId: meal.id, mealName: meal.mealName, mealType: meal.mealType || 'other',
         calories: meal.plannedCalories ?? meal.calories ?? null,
-        proteinG: meal.proteinG ?? null, carbsG: meal.carbsG ?? null, fatG: meal.fatG ?? null,
+        proteinG: meal.proteinG ?? null, carbsG: meal.carbsG ?? null, fatG: meal.fatG ?? null, fiberG: meal.fiberG ?? null,
       })
     } catch {
       setLogIds(prev => { const next = new Set(prev); if (wasLogged) next.add(meal.id); else next.delete(meal.id); return next })
@@ -172,12 +172,13 @@ export default function Weekly() {
 
             {/* Macro totals */}
             {(totals.calories || totals.proteinG) && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10, marginBottom: 18 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 10, marginBottom: 18 }}>
                 {[
                   { label: 'Calories', val: String(Math.round(totals.calories || 0)), unit: 'kcal', ac: GREEN },
                   { label: 'Protein',  val: String(Math.round(totals.proteinG || 0)), unit: 'g',    ac: '#3b82f6' },
                   { label: 'Carbs',    val: String(Math.round(totals.carbsG || 0)),   unit: 'g',    ac: '#f97316' },
                   { label: 'Fat',      val: String(Math.round(totals.fatG || 0)),     unit: 'g',    ac: '#a855f7' },
+                  { label: 'Fiber',    val: String(Math.round((totals as any).fiberG || 0)), unit: 'g', ac: '#06b6d4' },
                 ].map(t => (
                   <div key={t.label} style={{ background: '#fff', borderRadius: 14, padding: '12px 10px', textAlign: 'center', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
                     <div style={{ fontFamily: FONT_SYNE, fontSize: 18, fontWeight: 800, color: t.ac }}>
@@ -219,6 +220,7 @@ export default function Weekly() {
                       const prot = Math.round(m.proteinG || 0)
                       const carb = Math.round(m.carbsG || 0)
                       const fat  = Math.round(m.fatG || 0)
+                      const fib  = Math.round(m.fiberG || 0)
                       return (
                         <div key={i} style={{
                           display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 20px',
@@ -253,6 +255,7 @@ export default function Weekly() {
                                 {prot > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: '#3b82f6', background: '#eff6ff', borderRadius: 6, padding: '2px 7px' }}>P {prot}g</span>}
                                 {carb > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: '#f97316', background: '#fff7ed', borderRadius: 6, padding: '2px 7px' }}>C {carb}g</span>}
                                 {fat  > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: '#a855f7', background: '#faf5ff', borderRadius: 6, padding: '2px 7px' }}>F {fat}g</span>}
+                                {fib  > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: '#06b6d4', background: '#ecfeff', borderRadius: 6, padding: '2px 7px' }}>Fi {fib}g</span>}
                               </div>
                             )}
                           </div>

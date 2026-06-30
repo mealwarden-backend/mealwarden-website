@@ -371,6 +371,7 @@ function AIDietGeneratorModal({
         totalProtein: sum('protein'),
         totalCarbs: (dp?.meals || []).reduce((a: number, m: any) => a + (m.carbsG || 0), 0),
         totalFat: (dp?.meals || []).reduce((a: number, m: any) => a + (m.fatG || 0), 0),
+        totalFiber: (dp?.meals || []).reduce((a: number, m: any) => a + (m.fiberG || 0), 0),
         tips: null, waterIntake: null,
       })
       setStep(2)
@@ -542,12 +543,13 @@ function AIDietGeneratorModal({
           <div style={{ overflowY: 'auto', padding: '24px 26px', flex: 1, fontFamily: FONT }}>
             <div style={{ background: 'linear-gradient(135deg,#f5f3ff,#ede9fe)', border: '1px solid #ddd6fe', borderRadius: 14, padding: '16px 20px', marginBottom: 20 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: '#7c3aed', marginBottom: 12, fontFamily: FONT }}>📊 Daily Nutrition Summary</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 8 }}>
                 {[
                   { label: 'Calories', value: `${generatedDiet.totalCalories}`, unit: 'kcal', color: '#f97316' },
                   { label: 'Protein',  value: `${generatedDiet.totalProtein}`,  unit: 'g',    color: '#16a34a' },
                   { label: 'Carbs',    value: `${generatedDiet.totalCarbs}`,    unit: 'g',    color: '#3b82f6' },
                   { label: 'Fat',      value: `${generatedDiet.totalFat}`,      unit: 'g',    color: '#a855f7' },
+                  { label: 'Fiber',    value: `${Math.round((generatedDiet as any).totalFiber || 0)}`, unit: 'g', color: '#06b6d4' },
                 ].map(s => (
                   <div key={s.label} style={{ textAlign: 'center', background: '#fff', borderRadius: 10, padding: '10px 6px' }}>
                     <div style={{ fontSize: 9, color: s.color, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2, fontFamily: FONT }}>{s.label}</div>
