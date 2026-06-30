@@ -16,11 +16,13 @@ interface Meal {
   time: string
   name: string
   mealType: string
-  kcal: number
+  kcal: number        // planned calories (target / never overwritten)
+  actualKcal: number  // real calories after scan/edit — same as kcal if unchanged
   protein: number
   carbsG: number
   fatG: number
   done: boolean
+  originalName?: string  // original planned meal name — set only when the meal was replaced
 }
 
 interface DietChart {
@@ -94,11 +96,15 @@ export default function Nutrition() {
         time: m.timeHHMM,
         name: m.mealName,
         mealType: m.mealType || 'other',
-        kcal: Math.round((m.plannedCalories ?? m.calories) || 0),
-        protein: Math.round(m.proteinG || 0),
-        carbsG: Math.round(m.carbsG || 0),
-        fatG: Math.round(m.fatG || 0),
+        // planned = never overwritten baseline; actual = current value after edits
+        kcal:       Math.round((m.plannedCalories ?? m.calories) || 0),
+        actualKcal: Math.round(m.calories || 0),
+        protein: Math.round((m.plannedProteinG ?? m.proteinG) || 0),
+        carbsG:  Math.round((m.plannedCarbsG   ?? m.carbsG  ) || 0),
+        fatG:    Math.round((m.plannedFatG     ?? m.fatG    ) || 0),
         done: loggedIds.has(m.id),
+        originalName: (m.originalMealName && m.originalMealName !== m.mealName)
+          ? m.originalMealName : undefined,
       }))
       const hasPlan = md?.hasPlan ?? meals.length > 0
       if (md?.planId) setActivePlanId(md.planId)
@@ -204,8 +210,8 @@ export default function Nutrition() {
 
   // ── Compute stats ──
   const doneMeals   = todayMeals.filter(m => m.done)
-  const totalKcal   = todayMeals.reduce((a, m) => a + m.kcal,    0)
-  const doneKcal    = doneMeals.reduce( (a, m) => a + m.kcal,    0)
+  const totalKcal   = todayMeals.reduce((a, m) => a + m.kcal,       0) // planned target
+  const doneKcal    = doneMeals.reduce( (a, m) => a + m.actualKcal, 0) // actual consumed
   const totalProt   = todayMeals.reduce((a, m) => a + m.protein, 0)
   const doneProt    = doneMeals.reduce( (a, m) => a + m.protein, 0)
   const totalCarbs  = todayMeals.reduce((a, m) => a + m.carbsG,  0)
@@ -317,7 +323,7 @@ export default function Nutrition() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16, marginBottom: 28 }}>
           {[
             { label: 'Meals Logged',   value: `${doneMeals.length}/${todayMeals.length}`, icon: '🍽️', color: '#f0fdf4', ac: '#16a34a' },
-            { label: 'Calories Done',  value: totalKcal > 0 ? `${doneKcal}/${totalKcal}` : '–', icon: '🔥', color: '#fff7ed', ac: '#f97316' },
+            { label: 'Calories Eaten', value: totalKcal > 0 ? `${doneKcal}/${totalKcal}` : '–', icon: '🔥', color: '#fff7ed', ac: '#f97316' },
             { label: 'Protein Done',   value: totalProt > 0 ? `${doneProt}g/${totalProt}g` : '–', icon: '💪', color: '#eff6ff', ac: '#3b82f6' },
             { label: 'Today\'s Score', value: todayMeals.length > 0 ? `${mealScore}%` : '–', icon: '⭐', color: '#fdf4ff', ac: '#a855f7' },
           ].map(s => (
@@ -376,8 +382,27 @@ export default function Nutrition() {
                             </button>
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={{ fontSize: 11, color: m.done ? GREEN : '#9ca3af', fontWeight: 600, fontFamily: FONT }}>{m.time}</div>
-                              <div style={{ fontSize: 14, color: '#052e16', fontWeight: 600, fontFamily: FONT, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.name}</div>
-                              <div style={{ fontSize: 11, color: '#6b7280', marginTop: 1, fontFamily: FONT }}>{m.kcal} kcal · {m.protein}g P · {m.carbsG}g C · {m.fatG}g F</div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                <div style={{ fontSize: 14, color: '#052e16', fontWeight: 600, fontFamily: FONT }}>{m.name}</div>
+                                {m.originalName && (
+                                  <span style={{ fontSize: 10, fontWeight: 600, color: '#9ca3af', fontStyle: 'italic' }}>was: {m.originalName}</span>
+                                )}
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2, flexWrap: 'wrap' }}>
+                                <span style={{ fontSize: 11, color: '#6b7280', fontFamily: FONT }}>
+                                  {m.actualKcal !== m.kcal ? `${m.actualKcal} kcal` : `${m.kcal} kcal`} · {m.protein}g P · {m.carbsG}g C · {m.fatG}g F
+                                </span>
+                                {(() => {
+                                  const delta = m.actualKcal - m.kcal
+                                  if (m.kcal === 0 || Math.abs(delta) < 20) return m.kcal > 0 ? <span style={{ fontSize: 10, color: GREEN }}>🟢</span> : null
+                                  const over = delta > 0
+                                  return (
+                                    <span style={{ fontSize: 10, fontWeight: 700, color: over ? '#ea580c' : '#2563eb', background: over ? '#fff7ed' : '#eff6ff', border: `1px solid ${over ? '#fed7aa' : '#bfdbfe'}`, borderRadius: 6, padding: '1px 6px' }}>
+                                      {over ? '🔺' : '🔻'} {over ? '+' : ''}{delta} vs plan
+                                    </span>
+                                  )
+                                })()}
+                              </div>
                             </div>
                             {/* Action buttons */}
                             <div style={{ display: 'flex', gap: 5, flexShrink: 0 }}>
@@ -412,7 +437,7 @@ export default function Nutrition() {
                 </p>
               ) : (
                 [
-                  { label: 'Calories', done: doneKcal,  total: totalKcal,  unit: 'kcal', color: '#f97316' },
+                  { label: 'Calories (eaten vs plan)', done: doneKcal,  total: totalKcal,  unit: 'kcal', color: '#f97316' },
                   { label: 'Protein',  done: doneProt,  total: totalProt,  unit: 'g',    color: GREEN },
                   { label: 'Carbs',    done: doneCarbs, total: totalCarbs, unit: 'g',    color: '#f59e0b' },
                   { label: 'Fat',      done: doneFat,   total: totalFat,   unit: 'g',    color: '#ec4899' },
@@ -528,7 +553,11 @@ export default function Nutrition() {
               <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1fr 1fr 1fr', padding: '14px 16px', borderBottom: i < todayMeals.length - 1 ? '1px solid #f3f4f6' : 'none', background: m.done ? '#f0fdf4' : '#fff', transition: 'background 0.2s ease' }}>
                 <div style={{ fontSize: 13, color: '#6b7280', fontFamily: FONT }}>{m.time}</div>
                 <div style={{ fontSize: 13, fontWeight: 600, color: '#052e16', fontFamily: FONT }}>{m.name}</div>
-                <div style={{ fontSize: 13, color: '#374151', fontFamily: FONT }}>{m.kcal} kcal</div>
+                <div style={{ fontSize: 13, color: '#374151', fontFamily: FONT }}>
+                  {m.actualKcal !== m.kcal
+                    ? <span>{m.actualKcal} <span style={{ color: '#9ca3af', fontSize: 11 }}>/{m.kcal} plan</span></span>
+                    : <span>{m.kcal}</span>} kcal
+                </div>
                 <div style={{ fontSize: 13, color: '#374151', fontFamily: FONT }}>{m.protein}g</div>
                 <div>
                   <span style={{ fontSize: 11, fontWeight: 700, color: m.done ? '#16a34a' : '#9ca3af', background: m.done ? '#dcfce7' : '#f3f4f6', padding: '3px 10px', borderRadius: 100, fontFamily: FONT }}>

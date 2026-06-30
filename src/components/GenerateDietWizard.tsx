@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, CSSProperties } from 'react'
+import { useState, useEffect, CSSProperties } from 'react'
 import { api } from '@/lib/api'
 
 const FONT      = 'var(--font-jakarta), Plus Jakarta Sans, sans-serif'
@@ -80,12 +80,23 @@ export default function GenerateDietWizard({ guardianName, profile, onClose }: {
   const [reportSoon, setReport] = useState(false)
 
   // Step 2 — food & training
-  const [dietType, setDietType] = useState('Vegetarian')
-  const [cuisines, setCuisines] = useState<string[]>(['South Indian'])
-  const [customCuisine, setCC]  = useState('')
-  const [training, setTraining] = useState('none')
-  const [trainTime, setTrainT]  = useState('morning')
-  const [notes, setNotes]       = useState('')
+  const [dietType, setDietType]     = useState('Vegetarian')
+  const [cuisines, setCuisines]     = useState<string[]>(['South Indian'])
+  const [customCuisine, setCC]      = useState('')
+  const [training, setTraining]     = useState('none')
+  const [trainTime, setTrainT]      = useState('morning')
+  const [notes, setNotes]           = useState('')
+  // Enhanced personalisation (synced from mobile app)
+  const [foodLikes, setFoodLikes]     = useState('')
+  const [foodDislikes, setFoodDislikes] = useState('')
+  const [cookingTime, setCookingTime] = useState<number | null>(null)
+  const [lifestyle, setLifestyle]     = useState('')
+
+  // Gen status — remaining this week
+  const [genStatus, setGenStatus] = useState<{ remaining: number; windowResetsAt: string | null } | null>(null)
+  useEffect(() => {
+    (api as any).getGenStatus?.().then((s: any) => setGenStatus(s)).catch(() => {})
+  }, [])
 
   const toggle = (arr: string[], set: (a: string[]) => void, v: string) => set(arr.includes(v) ? arr.filter(x => x !== v) : [...arr, v])
 
@@ -142,6 +153,11 @@ export default function GenerateDietWizard({ guardianName, profile, onClose }: {
         wakeTime: wake,
         sleepTime: sleep,
         customPrompt: notes.trim() || null,
+        // Enhanced personalisation
+        foodLikes: foodLikes.trim() || null,
+        foodDislikes: foodDislikes.trim() || null,
+        cookingTimeMins: cookingTime,
+        lifestyle: lifestyle.trim() || null,
       }
       const res = await api.generateDiet(payload)
       const dp: any = res?.dietPlan
@@ -179,7 +195,14 @@ export default function GenerateDietWizard({ guardianName, profile, onClose }: {
               <div style={{ fontFamily: FONT_SYNE, fontSize: 19, fontWeight: 800, color: '#fff' }}>✨ Generate with {guardianName}</div>
               <div style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.75)', marginTop: 2 }}>{step <= 2 ? steps[step] : step === 3 ? `${guardianName} is building your plan` : 'Your plan is ready'}</div>
             </div>
-            {!busy && <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', fontSize: 18, cursor: 'pointer' }}>×</button>}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {genStatus != null && (
+                <div style={{ fontSize: 11, fontWeight: 700, color: genStatus.remaining > 0 ? '#e9d5ff' : '#fca5a5', background: 'rgba(255,255,255,0.12)', borderRadius: 20, padding: '4px 10px', whiteSpace: 'nowrap' }}>
+                  {genStatus.remaining > 0 ? `${genStatus.remaining}/5 left` : 'Limit reached'}
+                </div>
+              )}
+              {!busy && <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', fontSize: 18, cursor: 'pointer' }}>×</button>}
+            </div>
           </div>
           <div style={{ display: 'flex', gap: 6, marginTop: 14 }}>
             {[0, 1, 2].map(i => <div key={i} style={{ height: 4, flex: 1, borderRadius: 4, background: (step > 2 ? 2 : step) >= i ? '#e9d5ff' : 'rgba(255,255,255,0.25)' }} />)}
@@ -299,8 +322,29 @@ export default function GenerateDietWizard({ guardianName, profile, onClose }: {
                   </div>
                 </>
               )}
+              {/* ── Enhanced personalisation ── */}
+              <label style={label}>Foods you love <span style={{ color: '#9ca3af', fontWeight: 500 }}>· optional</span></label>
+              <input value={foodLikes} onChange={e => setFoodLikes(e.target.value)} placeholder="e.g. paneer, dal, oats, eggs, chicken…" style={inputBox} />
+
+              <label style={label}>Foods you dislike / avoid <span style={{ color: '#9ca3af', fontWeight: 500 }}>· optional</span></label>
+              <input value={foodDislikes} onChange={e => setFoodDislikes(e.target.value)} placeholder="e.g. bitter gourd, mushrooms, fish…" style={inputBox} />
+
+              <label style={label}>Cooking time available <span style={{ color: '#9ca3af', fontWeight: 500 }}>· optional</span></label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {[{ v: null, label: 'No preference' }, { v: 15, label: '15 min' }, { v: 30, label: '30 min' }, { v: 45, label: '45 min' }, { v: 60, label: '1 hour' }, { v: 90, label: '90+ min' }].map(o => (
+                  <Chip key={String(o.v)} active={cookingTime === o.v} onClick={() => setCookingTime(o.v)}>{o.label}</Chip>
+                ))}
+              </div>
+
+              <label style={label}>Your lifestyle <span style={{ color: '#9ca3af', fontWeight: 500 }}>· optional</span></label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {['Work from home', 'Office job', 'Field work', 'Student', 'Homemaker', 'Shift work'].map(ls => (
+                  <Chip key={ls} active={lifestyle === ls} onClick={() => setLifestyle(lifestyle === ls ? '' : ls)}>{ls}</Chip>
+                ))}
+              </div>
+
               <label style={label}>Anything else for {guardianName}? <span style={{ color: '#9ca3af', fontWeight: 500 }}>· optional</span></label>
-              <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="e.g. high protein, no dinner carbs, love paneer, intermittent fasting…" style={{ ...inputBox, minHeight: 70, resize: 'vertical' }} />
+              <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="e.g. high protein, no dinner carbs, intermittent fasting…" style={{ ...inputBox, minHeight: 70, resize: 'vertical' }} />
               <div style={{ background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: 12, padding: '12px 14px', marginTop: 16, display: 'flex', gap: 10 }}>
                 <span style={{ fontSize: 18 }}>✨</span>
                 <p style={{ fontSize: 13, color: '#92400e', lineHeight: 1.6, margin: 0 }}>{guardianName} will size your calories &amp; macros, then build {mealsDisplay} meals between {wake} and {sleep} — respecting your diet, cuisine, training and conditions.</p>

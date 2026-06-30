@@ -94,10 +94,10 @@ export default function Progress() {
     { icon: '📅', label: 'Days Logged',  value: s.loggedDays != null ? String(s.loggedDays) : '–', color: '#fdf4ff', ac: '#a855f7' },
   ]
   const macros = [
-    { label: 'Protein', val: nut.proteinG, color: GREEN },
-    { label: 'Carbs',   val: nut.carbsG,   color: '#f97316' },
-    { label: 'Fat',     val: nut.fatG,     color: '#a855f7' },
-    { label: 'Fiber',   val: nut.fiberG,   color: '#3b82f6' },
+    { label: 'Protein', val: nut.proteinG, planned: nut.plannedProteinG, color: GREEN },
+    { label: 'Carbs',   val: nut.carbsG,   planned: nut.plannedCarbsG,   color: '#f97316' },
+    { label: 'Fat',     val: nut.fatG,     planned: nut.plannedFatG,     color: '#a855f7' },
+    { label: 'Fiber',   val: nut.fiberG,   planned: nut.plannedFiberG,   color: '#3b82f6' },
   ]
 
   return (
@@ -209,11 +209,51 @@ export default function Progress() {
                     <div style={{ fontFamily: FONT_SYNE, fontSize: 22, fontWeight: 800, color: m.color }}>
                       {m.val ?? 0}<span style={{ fontSize: 12, color: '#9ca3af' }}>g</span>
                     </div>
+                    {m.planned > 0 && (
+                      <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 2 }}>/ {m.planned}g plan</div>
+                    )}
                     <div style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>{m.label}</div>
                   </div>
                 ))}
               </div>
             </div>
+
+            {/* Nutrition Balance — planned vs consumed (day view only) */}
+            {period === 'day' && (nut.plannedProteinG > 0 || nut.plannedCarbsG > 0 || nut.plannedFatG > 0) && (
+              <div style={{ background: '#fff', borderRadius: 20, padding: 24, marginBottom: 20, boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
+                <div style={{ fontFamily: FONT_SYNE, fontSize: 18, fontWeight: 700, color: '#052e16', marginBottom: 4 }}>Nutrition Balance</div>
+                <p style={{ fontSize: 13, color: '#9ca3af', marginBottom: 20 }}>Planned vs eaten today</p>
+                {macros.filter(m => (m.planned ?? 0) > 0 || (m.val ?? 0) > 0).map((m, i, arr) => {
+                  const eaten   = m.val ?? 0
+                  const planned = m.planned ?? 0
+                  const pct     = planned > 0 ? Math.min(100, Math.round((eaten / planned) * 100)) : 0
+                  const delta   = Math.round(eaten - planned)
+                  const onTarget = planned > 0 && Math.abs(delta) <= planned * 0.1
+                  const over    = delta > 0
+                  return (
+                    <div key={m.label} style={{ marginBottom: i < arr.length - 1 ? 18 : 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 6 }}>
+                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: m.color, marginRight: 8, flexShrink: 0 }} />
+                        <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: '#374151' }}>{m.label}</span>
+                        <span style={{ fontSize: 13, fontWeight: 800, color: '#111827' }}>{eaten}g</span>
+                        <span style={{ fontSize: 12, color: '#9ca3af' }}>&nbsp;/ {planned}g</span>
+                        {planned > 0 && !onTarget && (
+                          <span style={{ marginLeft: 8, fontSize: 10, fontWeight: 800, color: over ? '#c2410c' : '#1d4ed8', background: over ? '#fff7ed' : '#eff6ff', border: `1px solid ${over ? '#fed7aa' : '#bfdbfe'}`, borderRadius: 6, padding: '2px 6px' }}>
+                            {over ? '+' : ''}{delta}g
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ height: 8, borderRadius: 4, background: '#f3f4f6', overflow: 'hidden' }}>
+                        <div style={{ width: `${pct}%`, height: '100%', borderRadius: 4, background: m.color, opacity: onTarget ? 1 : over ? 0.7 : 0.85, transition: 'width 0.6s ease' }} />
+                      </div>
+                      <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 3 }}>
+                        {pct}% of plan{onTarget ? ' · ✓ on target' : over ? ' · slightly over' : pct < 50 ? ' · more to eat' : ''}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
 
             {/* Journey Summary */}
             <div style={{ background: '#fff', borderRadius: 20, padding: 24, marginBottom: 20, boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>

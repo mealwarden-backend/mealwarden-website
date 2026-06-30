@@ -170,6 +170,7 @@ export const api = {
   // Plans & meals
   getDietPlans:   () => cget('/api/diet-plans'),
   generateDiet:   (payload: any) => mutate('/api/diet-plans/generate', { method: 'POST', body: JSON.stringify(payload) }),
+  getGenStatus:   () => cget('/api/diet-plans/gen-status'),
   activatePlan:   (id: string) => mutate(`/api/diet-plans/${id}/activate`, { method: 'PUT' }),
   deleteDietPlan: (id: string) => mutate(`/api/diet-plans/${id}`, { method: 'DELETE' }),
   getTodaysMeals: () => cget('/api/meals/today'),
