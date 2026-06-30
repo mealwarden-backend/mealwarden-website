@@ -21,6 +21,7 @@ interface Meal {
   protein: number
   carbsG: number
   fatG: number
+  fiberG: number
   done: boolean
   originalName?: string  // original planned meal name — set only when the meal was replaced
 }
@@ -102,6 +103,7 @@ export default function Nutrition() {
         protein: Math.round((m.plannedProteinG ?? m.proteinG) || 0),
         carbsG:  Math.round((m.plannedCarbsG   ?? m.carbsG  ) || 0),
         fatG:    Math.round((m.plannedFatG     ?? m.fatG    ) || 0),
+        fiberG:  Math.round(m.fiberG || 0),
         done: loggedIds.has(m.id),
         originalName: (m.originalMealName && m.originalMealName !== m.mealName)
           ? m.originalMealName : undefined,
@@ -218,6 +220,8 @@ export default function Nutrition() {
   const doneCarbs   = doneMeals.reduce( (a, m) => a + m.carbsG,  0)
   const totalFat    = todayMeals.reduce((a, m) => a + m.fatG,    0)
   const doneFat     = doneMeals.reduce( (a, m) => a + m.fatG,    0)
+  const totalFiber  = todayMeals.reduce((a, m) => a + m.fiberG,  0)
+  const doneFiber   = doneMeals.reduce( (a, m) => a + m.fiberG,  0)
   const mealScore   = todayMeals.length > 0
     ? Math.round((doneMeals.length / todayMeals.length) * 100) : 0
 
@@ -390,7 +394,7 @@ export default function Nutrition() {
                               </div>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2, flexWrap: 'wrap' }}>
                                 <span style={{ fontSize: 11, color: '#6b7280', fontFamily: FONT }}>
-                                  {m.actualKcal !== m.kcal ? `${m.actualKcal} kcal` : `${m.kcal} kcal`} · {m.protein}g P · {m.carbsG}g C · {m.fatG}g F
+                                  {m.actualKcal !== m.kcal ? `${m.actualKcal} kcal` : `${m.kcal} kcal`} · {m.protein}g P · {m.carbsG}g C · {m.fatG}g F{m.fiberG > 0 ? ` · ${m.fiberG}g Fiber` : ''}
                                 </span>
                                 {(() => {
                                   const delta = m.actualKcal - m.kcal
@@ -441,6 +445,7 @@ export default function Nutrition() {
                   { label: 'Protein',  done: doneProt,  total: totalProt,  unit: 'g',    color: GREEN },
                   { label: 'Carbs',    done: doneCarbs, total: totalCarbs, unit: 'g',    color: '#f59e0b' },
                   { label: 'Fat',      done: doneFat,   total: totalFat,   unit: 'g',    color: '#ec4899' },
+                  { label: 'Fiber',    done: doneFiber, total: totalFiber, unit: 'g',    color: '#3b82f6' },
                 ].map(p => {
                   const pct = p.total > 0 ? Math.round((p.done / p.total) * 100) : 0
                   return (
