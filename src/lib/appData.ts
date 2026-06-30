@@ -5,20 +5,36 @@
 export type Plan = {
   key: string
   name: string
-  monthly: number   // INR / month
-  annual: number    // INR / year
+  emoji: string
   tagline: string
+  // Original (full) prices
+  originalMonthly: number
+  originalAnnual: number
+  // Launch offer prices (valid until Aug 31 2026)
+  launchMonthly: number
+  launchAnnual: number
+  // Convenience aliases (used by legacy components — equals launchMonthly/launchAnnual)
+  monthly: number
+  annual: number
+  // Monthly AI limits
+  genLimit: number       // diet generations / month
+  uploadLimit: number    // plan uploads / month
   popular?: boolean
   features: string[]
-  soon?: string[]   // upcoming features shown with "Coming soon" badge
+  soon?: string[]        // upcoming features shown with "Coming soon" badge
 }
 
-// Mirrors PaywallScreen PLANS exactly. Annual ≈ 33% off monthly.
+// Mirrors PaywallScreen PLANS exactly.
+// Launch offer valid until August 31, 2026.
 export const PLANS: Plan[] = [
   {
-    key: 'free', name: 'Free', monthly: 0, annual: 0, tagline: 'Get started',
+    key: 'free', name: 'Free', emoji: '🌱', tagline: 'Get started',
+    originalMonthly: 0,   launchMonthly: 0,
+    originalAnnual:  0,   launchAnnual:  0,
+    monthly: 0, annual: 0,
+    genLimit: 1, uploadLimit: 1,
     features: [
-      '1 active diet plan',
+      '1 diet generation / month',
       '5 Guardian messages / day',
       'Basic meal reminders',
       'Water & weight tracking',
@@ -29,19 +45,28 @@ export const PLANS: Plan[] = [
     ],
   },
   {
-    key: 'silver', name: 'Silver', monthly: 149, annual: 1199, tagline: 'For consistency',
+    key: 'silver', name: 'Silver', emoji: '🥈', tagline: 'For consistency',
+    originalMonthly: 199, launchMonthly: 149,
+    originalAnnual: 2388, launchAnnual: 1199,
+    monthly: 149, annual: 1199,
+    genLimit: 3, uploadLimit: 2,
     features: [
+      '3 diet generations + 2 uploads / month',
       'Everything in Free',
       'Ad-free experience',
-      'Unlimited diet plans',
       'Full recipes & prep tasks',
       'Progress analytics',
     ],
     soon: ['WhatsApp morning digest', 'WhatsApp night reminder'],
   },
   {
-    key: 'premium', name: 'Premium', monthly: 299, annual: 2399, tagline: 'Most loved', popular: true,
+    key: 'premium', name: 'Premium', emoji: '💎', tagline: 'Most loved', popular: true,
+    originalMonthly: 349, launchMonthly: 249,
+    originalAnnual: 4188, launchAnnual: 1999,
+    monthly: 249, annual: 1999,
+    genLimit: 5, uploadLimit: 5,
     features: [
+      '5 diet generations + 5 uploads / month',
       'Everything in Silver',
       'Unlimited Guardian chat',
       'Meal Scan — AI calories from a photo',
@@ -52,8 +77,13 @@ export const PLANS: Plan[] = [
     soon: ['Voice Guardian (5 calls / day)'],
   },
   {
-    key: 'gold', name: 'Gold', monthly: 699, annual: 5499, tagline: 'Full power',
+    key: 'gold', name: 'Gold', emoji: '👑', tagline: 'Full power',
+    originalMonthly: 749, launchMonthly: 599,
+    originalAnnual: 8988, launchAnnual: 4799,
+    monthly: 599, annual: 4799,
+    genLimit: 10, uploadLimit: 10,
     features: [
+      '10 diet generations + 10 uploads / month',
       'Everything in Premium',
       'Wearable & step sync',
       'AI meal swaps',
@@ -65,6 +95,21 @@ export const PLANS: Plan[] = [
 ]
 
 export const TRIAL_DAYS = 14
+
+// Launch offer end date — keep in sync with PaywallScreen.tsx
+export const LAUNCH_END = new Date('2026-08-31T23:59:59+05:30')
+
+export function launchDaysLeft(): number {
+  const diff = LAUNCH_END.getTime() - Date.now()
+  return Math.max(0, Math.ceil(diff / 86400000))
+}
+
+// Credit packs — keep in sync with mwCredits.controller.ts
+export const CREDIT_PACKS = [
+  { key: 'single_gen',    label: '1 Diet Generation',        desc: '⚡ Adds 1 extra generate credit',         price: 49  },
+  { key: 'single_upload', label: '1 Plan Upload',            desc: '📤 Adds 1 extra upload credit',           price: 69  },
+  { key: 'bundle',        label: '2 Generations + 1 Upload', desc: '⚡⚡ + 📤  Best value bundle',            price: 99, bestValue: true },
+] as const
 
 // Real guardians from the app (Meenu & Maddy), plus the Gold custom guardian.
 export const GUARDIANS = [

@@ -247,5 +247,11 @@ export const api = {
   markAllNotificationsRead: () => mutate('/api/notifications/read-all', { method: 'POST' }),
   markNotificationRead: (id: string) => mutate(`/api/notifications/${id}/read`, { method: 'POST' }),
 
+  // MealWarden Credits
+  getMwCredits:       () => cget('/api/mw-credits'),
+  createCreditOrder:  (packType: string) => mutate('/api/mw-credits/create-order', { method: 'POST', body: JSON.stringify({ packType }) }),
+  purchaseMwCredits:  (packType: string, orderId?: string, paymentId?: string, signature?: string) =>
+    mutate('/api/mw-credits/purchase', { method: 'POST', body: JSON.stringify({ packType, orderId, paymentId, signature }) }),
+
   clearCache,
 }
