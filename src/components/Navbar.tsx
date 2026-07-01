@@ -52,7 +52,7 @@ export default function Navbar() {
 
   const loadNotifs = useCallback(async () => {
     try {
-      const res = await (api as any).getNotifications()
+      const res = await api.getNotifications()
       const data: NotifItem[] = res?.data || []
       setNotifs(data)
       setUnread(res?.unreadCount ?? data.filter((n: NotifItem) => !n.isRead).length)
@@ -74,7 +74,7 @@ export default function Navbar() {
 
   const markAllRead = async () => {
     try {
-      await (api as any).markAllNotificationsRead()
+      await api.markAllNotificationsRead()
       setNotifs(prev => prev.map(n => ({ ...n, isRead: true })))
       setUnread(0)
     } catch {}

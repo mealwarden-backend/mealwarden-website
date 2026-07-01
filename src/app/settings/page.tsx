@@ -39,12 +39,12 @@ export default function Settings() {
   const [savingW, setSavingW]     = useState(false)
   const [savedW, setSavedW]       = useState(false)
 
-  // Notification preferences
+  // Notification preferences — keys match backend notificationPrefs field exactly
   const [notifs, setNotifs] = useState({
     mealReminders:    true,
-    prepAlerts:       true,
+    prep:             true,
     groceryReminders: false,
-    dailySummary:     true,
+    daily:            true,
     waterReminders:   true,
   })
   const [savingN, setSavingN] = useState(false)
@@ -74,8 +74,8 @@ export default function Settings() {
         setHeight(u.heightCm ? String(u.heightCm) : '')
         setGender(u.gender || 'male')
         setWaterGoal(u.waterGoalGlasses || u.waterGoal || 8)
-        if (u.notificationPreferences) {
-          setNotifs(prev => ({ ...prev, ...u.notificationPreferences }))
+        if (u.notificationPrefs) {
+          setNotifs(prev => ({ ...prev, ...u.notificationPrefs }))
         }
         setGSel((u.guardian as any) || 'meenu')
         if (u.guardian === 'custom' && u.customGuardian) {
@@ -128,7 +128,7 @@ export default function Settings() {
   const saveNotifs = async () => {
     setSavingN(true); setSavedN(false)
     try {
-      await api.updateProfile({ notificationPreferences: notifs })
+      await api.updateProfile({ notificationPrefs: notifs })
       setSavedN(true); setTimeout(() => setSavedN(false), 2500)
     } catch {} finally { setSavingN(false) }
   }
@@ -299,10 +299,10 @@ export default function Settings() {
             Manage your push notification preferences. These are synced to your mobile app.
           </p>
           {([
-            { key: 'mealReminders',    icon: '🍽️', label: 'Meal reminders',     desc: 'Get notified before each scheduled meal' },
-            { key: 'prepAlerts',       icon: '🥗', label: 'Prep alerts',         desc: 'Reminders to prep ingredients in advance' },
-            { key: 'waterReminders',   icon: '💧', label: 'Water reminders',     desc: 'Nudges to hit your daily water goal' },
-            { key: 'dailySummary',     icon: '📊', label: 'Daily summary',       desc: 'End-of-day recap of meals logged and adherence' },
+            { key: 'mealReminders',    icon: '🍽️', label: 'Meal reminders',     desc: 'Good morning, pre-meal, meal-time, post-meal check & good night' },
+            { key: 'prep',             icon: '🥗', label: 'Prep alerts',         desc: 'Reminders to prep ingredients in advance' },
+            { key: 'waterReminders',   icon: '💧', label: 'Water reminders',     desc: 'Nudges every 30 min to hit your daily water goal' },
+            { key: 'daily',            icon: '📊', label: 'Daily summary',       desc: 'Guardian motivation messages during the day' },
             { key: 'groceryReminders', icon: '🛒', label: 'Grocery reminders',   desc: 'Remind to buy items before the week starts' },
           ] as const).map(n => (
             <div key={n.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #f3f4f6' }}>
