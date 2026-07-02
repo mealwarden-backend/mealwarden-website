@@ -103,7 +103,7 @@ export default function Nutrition() {
         protein: Math.round((m.plannedProteinG ?? m.proteinG) || 0),
         carbsG:  Math.round((m.plannedCarbsG   ?? m.carbsG  ) || 0),
         fatG:    Math.round((m.plannedFatG     ?? m.fatG    ) || 0),
-        fiberG:  Math.round(m.fiberG || 0),
+        fiberG:  m.fiberG > 0 ? Math.round(m.fiberG) : Math.round(((m.plannedCalories ?? m.calories) || 0) * 14 / 1000),
         done: loggedIds.has(m.id),
         originalName: (m.originalMealName && m.originalMealName !== m.mealName)
           ? m.originalMealName : undefined,
@@ -169,7 +169,8 @@ export default function Nutrition() {
       if (meal.protein) payload.proteinG = meal.protein
       if (meal.carbsG)  payload.carbsG   = meal.carbsG
       if (meal.fatG)    payload.fatG     = meal.fatG
-      if (meal.fiberG > 0) payload.fiberG = meal.fiberG
+      const fiberVal = meal.fiberG > 0 ? meal.fiberG : Math.round((meal.kcal || 0) * 14 / 1000)
+      if (fiberVal > 0) payload.fiberG = fiberVal
       await api.toggleLog(payload)
     } catch {
       // Rollback on error

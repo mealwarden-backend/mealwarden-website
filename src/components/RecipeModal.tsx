@@ -6,6 +6,8 @@ import { api } from '@/lib/api'
 const FONT      = 'var(--font-jakarta), Plus Jakarta Sans, sans-serif'
 const FONT_SYNE = 'var(--font-syne), Syne, sans-serif'
 
+const cap = (s?: string | null): string => s ? s.charAt(0).toUpperCase() + s.slice(1) : ''
+
 export default function RecipeModal({ mealId, mealName, guardianName = 'Meenu', onClose }: { mealId: string; mealName: string; guardianName?: string; onClose: () => void }) {
   const [recipe, setRecipe] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -26,7 +28,7 @@ export default function RecipeModal({ mealId, mealName, guardianName = 'Meenu', 
 
   const ingRow = (ing: any, i: number) => (
     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '9px 0', borderBottom: '1px solid #f3f4f6' }}>
-      <span style={{ fontSize: 14, color: '#374151' }}>{ing?.name || ing?.item || String(ing)}</span>
+      <span style={{ fontSize: 14, color: '#374151' }}>{cap(ing?.name || ing?.item) || String(ing)}</span>
       {ing?.quantity && <span style={{ fontSize: 13, color: '#9ca3af', flexShrink: 0 }}>{ing.quantity}</span>}
     </div>
   )
@@ -100,7 +102,7 @@ export default function RecipeModal({ mealId, mealName, guardianName = 'Meenu', 
                   {benefits.map((b: string, i: number) => (
                     <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
                       <span style={{ color: '#16a34a' }}>•</span>
-                      <span style={{ fontSize: 13.5, color: '#6b7280', lineHeight: 1.6 }}>{b}</span>
+                      <span style={{ fontSize: 13.5, color: '#6b7280', lineHeight: 1.6 }}>{cap(b)}</span>
                     </div>
                   ))}
                 </>
@@ -117,7 +119,7 @@ function StepRow({ n, text }: { n: number; text: string }) {
   return (
     <div style={{ display: 'flex', gap: 12, marginBottom: 10 }}>
       <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#f0fdf4', border: '1.5px solid #bbf7d0', color: '#16a34a', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{n}</div>
-      <span style={{ fontSize: 13.5, color: '#374151', lineHeight: 1.65 }}>{text}</span>
+      <span style={{ fontSize: 13.5, color: '#374151', lineHeight: 1.65 }}>{cap(text)}</span>
     </div>
   )
 }

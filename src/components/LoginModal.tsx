@@ -63,7 +63,7 @@ export default function LoginModal({ isOpen, onClose }: Props) {
             if (r.success) {
               setStatus('success'); setSuccessMsg('✅ Signed in with Google! 🛡️')
               setTimeout(() => { onClose(); window.location.href = '/dashboard' }, 1200)
-            } else { setStatus('error'); setErrorMsg(r.error || 'Google sign-in failed.') }
+            } else { setStatus('error'); setErrorMsg(r.error || 'Google Sign-In failed.') }
           },
         })
         gsiInited.current = true
@@ -396,7 +396,7 @@ export default function LoginModal({ isOpen, onClose }: Props) {
                 <div ref={googleDivRef} style={{ display: 'flex', justifyContent: 'center', minHeight: 44 }} />
               ) : (
                 <p style={{ fontSize: 12, color: '#9ca3af', textAlign: 'center', fontFamily: 'var(--font-jakarta), Plus Jakarta Sans, sans-serif' }}>
-                  Google sign-in is being set up — please use email below for now.
+                  Google Sign-In is being set up — please use email below for now.
                 </p>
               )}
 

@@ -49,10 +49,10 @@ const BOT_RESPONSES: Record<string, string> = {
   'guardian': 'Your guardian watches over your nutrition every day — reminders, recipes and nutrition help. Pick warm **Meenu** or focused **Maddy**; Gold members can create their own.',
 
   // Technical
-  'android':  '🤖 MealWarden is available on Android via Google Play Store. You can also download the APK directly from our download page!',
+  'android':  '🤖 MealWarden is available on Android via the Google Play Store. Search for MealWarden and install it directly!',
   'ios':      '🍎 MealWarden is available on iOS via the Apple App Store. Requires iOS 14.0 or later.',
-  'download': '📲 Download MealWarden from:\n🍎 iOS → App Store\n🤖 Android → Google Play or direct APK\n\nVisit mealwarden.com/download to get started!',
-  'install':  '📲 You can install MealWarden from the App Store (iOS) or Google Play (Android). We also offer a direct APK download for Android!',
+  'download': '📲 Download MealWarden from:\n🍎 iOS → App Store\n🤖 Android → Google Play Store\n\nVisit mealwarden.com/download to get started!',
+  'install':  '📲 You can install MealWarden from the App Store (iOS) or Google Play Store (Android).',
   'platform': 'MealWarden works on iOS and Android (launching soon), and on the web at mealwarden.com — your account and data stay in sync across all of them.',
 
   // Privacy & Security

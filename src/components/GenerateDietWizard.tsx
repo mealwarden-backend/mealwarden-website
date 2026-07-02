@@ -9,7 +9,7 @@ const FONT_SYNE = 'var(--font-syne), Syne, sans-serif'
 const GENDERS  = ['male', 'female', 'other']
 const GOALS    = [{ v: 'lose', label: 'Fat Loss' }, { v: 'recomp', label: 'Lean & Toned' }, { v: 'gain', label: 'Muscle Gain' }, { v: 'maintain', label: 'Maintain' }]
 const ACTIVITY = [
-  { v: 'sedentary', label: 'Sedentary', hint: 'Little/no exercise' },
+  { v: 'sedentary', label: 'Sedentary', hint: 'Little or no exercise' },
   { v: 'light', label: 'Lightly active', hint: '1–3 days/week' },
   { v: 'moderate', label: 'Moderately active', hint: '3–5 days/week' },
   { v: 'active', label: 'Active', hint: '6–7 days/week' },
@@ -69,7 +69,7 @@ export default function GenerateDietWizard({ guardianName, profile, onClose }: {
   const [activity, setActivity] = useState(profile?.activity && ACTIVITY.some(a => a.v === profile.activity) ? profile.activity : 'light')
 
   // Step 1 — routine & health
-  const [mealsChoice, setMealsChoice] = useState<string>('5') // '3'|'4'|'5'|'6'|'auto'|'other'
+  const [mealsChoice, setMealsChoice] = useState<string>('auto') // '3'|'4'|'5'|'6'|'auto'|'other'
   const [mealsOther, setMealsOther]   = useState('')
   const [wake, setWake]         = useState('6:30 AM')
   const [sleep, setSleep]       = useState('10:30 PM')
@@ -284,7 +284,7 @@ export default function GenerateDietWizard({ guardianName, profile, onClose }: {
                 {CONDITIONS.map(c => <Chip key={c} active={conditions.includes(c)} onClick={() => toggle(conditions, setConds, c)}>{conditions.includes(c) ? '✓ ' : ''}{c}</Chip>)}
                 <Chip active={otherOn} onClick={() => setOtherOn(o => !o)}>Other</Chip>
               </div>
-              {otherOn && <input value={otherText} onChange={e => setOther(e.target.value)} placeholder="Type condition(s), comma separated" style={{ ...inputBox, marginTop: 10 }} />}
+              {otherOn && <input value={otherText} onChange={e => setOther(e.target.value)} placeholder="Type conditions, comma-separated" style={{ ...inputBox, marginTop: 10 }} />}
               <div onClick={() => setReport(v => !v)} style={{ border: '1.5px dashed #c4b5fd', borderRadius: 12, padding: '14px 16px', background: '#faf5ff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, marginTop: 12 }}>
                 <span style={{ fontSize: 22 }}>📄</span>
                 <div style={{ flex: 1 }}>
@@ -347,7 +347,7 @@ export default function GenerateDietWizard({ guardianName, profile, onClose }: {
 
               <label style={label}>Your lifestyle <span style={{ color: '#9ca3af', fontWeight: 500 }}>· optional</span></label>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {['Work from home', 'Office job', 'Field work', 'Student', 'Homemaker', 'Shift work'].map(ls => (
+                {['Work from home', 'Software Engineer / IT', 'Field work', 'Student', 'Homemaker', 'Shift work'].map(ls => (
                   <Chip key={ls} active={lifestyle === ls} onClick={() => setLifestyle(lifestyle === ls ? '' : ls)}>{ls}</Chip>
                 ))}
               </div>

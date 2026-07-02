@@ -326,7 +326,7 @@ function AIDietGeneratorModal({
   const toggleCondition = (c: string) => setConditions(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c])
 
   const steps = [
-    { title: 'Meal Preferences',          subtitle: 'Customize your diet plan' },
+    { title: 'Meal Preferences',          subtitle: 'Customise your diet plan' },
     { title: 'Generating Your Plan',      subtitle: `${guardianName} is building your chart` },
     { title: 'Your Diet Chart is Ready!', subtitle: 'Review before importing' },
   ]
@@ -371,7 +371,7 @@ function AIDietGeneratorModal({
         totalProtein: sum('protein'),
         totalCarbs: (dp?.meals || []).reduce((a: number, m: any) => a + (m.carbsG || 0), 0),
         totalFat: (dp?.meals || []).reduce((a: number, m: any) => a + (m.fatG || 0), 0),
-        totalFiber: (dp?.meals || []).reduce((a: number, m: any) => a + (m.fiberG || 0), 0),
+        totalFiber: (dp?.meals || []).reduce((a: number, m: any) => a + (m.fiberG > 0 ? m.fiberG : Math.round((m.calories || 0) * 14 / 1000)), 0),
         tips: null, waterIntake: null,
       })
       setStep(2)
@@ -1084,7 +1084,8 @@ export default function Dashboard() {
       if (m.protein) payload.proteinG = m.protein
       if ((m as any).carbsG) payload.carbsG = (m as any).carbsG
       if ((m as any).fatG) payload.fatG = (m as any).fatG
-      if ((m as any).fiberG > 0) payload.fiberG = (m as any).fiberG
+      const fib = (m as any).fiberG; const fibVal = fib > 0 ? fib : Math.round((m.kcal || 0) * 14 / 1000)
+      if (fibVal > 0) payload.fiberG = fibVal
       api.toggleLog(payload).catch(() => {
         setMeals(prev => prev.map((mm, idx) => idx === i ? { ...mm, done: wasDone } : mm))
       })
@@ -1243,9 +1244,17 @@ export default function Dashboard() {
                 <div style={{ fontSize: 48, marginBottom: 12 }}>📋</div>
                 <div style={{ fontFamily: FONT_SYNE, fontSize: 18, fontWeight: 700, color: '#052e16', marginBottom: 8 }}>No Diet Chart Yet</div>
                 <p style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.7, marginBottom: 24, fontFamily: FONT }}>Upload your dietitian's chart or let {guardianName} create a personalized plan just for you!</p>
-                <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-                  <button onClick={() => setShowUpload(true)} style={{ padding: '12px 20px', background: 'linear-gradient(135deg,#16a34a,#22c55e)', color: '#fff', border: 'none', borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: FONT }}>📸 Scan Existing Chart</button>
-                  <button onClick={() => setShowAIGenerator(true)} style={{ padding: '12px 20px', background: 'linear-gradient(135deg,#7c3aed,#a855f7)', color: '#fff', border: 'none', borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: FONT }}>✨ Generate with {guardianName}</button>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+                  <button onClick={() => setShowUpload(true)} style={{ padding: '12px 20px', background: 'linear-gradient(135deg,#16a34a,#22c55e)', color: '#fff', border: 'none', borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: FONT, width: '100%', maxWidth: 280 }}>📸 Upload & Activate Your Diet Plan</button>
+                  {/* Bridge callout */}
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, background: '#f0fdf4', border: '1px solid rgba(22,163,74,0.25)', borderRadius: 12, padding: '12px 16px', width: '100%', maxWidth: 320, textAlign: 'left' }}>
+                    <span style={{ fontSize: 16, flexShrink: 0 }}>✨</span>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: '#052e16', marginBottom: 3, fontFamily: FONT_SYNE }}>No diet plan ready? No problem.</div>
+                      <div style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.6, fontFamily: FONT }}>Your guardian can curate the best diet for you as per your preferences.</div>
+                    </div>
+                  </div>
+                  <button onClick={() => setShowAIGenerator(true)} style={{ padding: '12px 20px', background: 'linear-gradient(135deg,#7c3aed,#a855f7)', color: '#fff', border: 'none', borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: FONT, width: '100%', maxWidth: 280 }}>✨ Generate a Diet Plan with {guardianName}</button>
                 </div>
               </div>
             ) : (

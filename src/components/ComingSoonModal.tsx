@@ -41,7 +41,7 @@ export default function ComingSoonModal({ open, onClose }: { open: boolean; onCl
           <div style={{ fontSize: 28 }}>🤖</div>
           <div style={{ flex: 1, textAlign: 'left' }}>
             <div style={{ fontSize: 13, fontWeight: 800, color: '#16a34a' }}>Android — Available Now</div>
-            <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>Download APK · Google Play coming soon</div>
+            <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>Google Play — coming soon</div>
           </div>
           <div style={{
             background: '#16a34a', color: '#fff',

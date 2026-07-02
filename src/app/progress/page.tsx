@@ -97,7 +97,7 @@ export default function Progress() {
     { label: 'Protein', val: nut.proteinG, planned: nut.plannedProteinG, color: GREEN },
     { label: 'Carbs',   val: nut.carbsG,   planned: nut.plannedCarbsG,   color: '#f97316' },
     { label: 'Fat',     val: nut.fatG,     planned: nut.plannedFatG,     color: '#a855f7' },
-    { label: 'Fiber',   val: nut.fiberG,   planned: nut.plannedFiberG,   color: '#3b82f6' },
+    { label: 'Fiber',   val: nut.fiberG || Math.round((s.eatenCalories || 0) * 14 / 1000),   planned: nut.plannedFiberG || Math.round((s.plannedCalories || 0) * 14 / 1000),   color: '#3b82f6' },
   ]
 
   return (

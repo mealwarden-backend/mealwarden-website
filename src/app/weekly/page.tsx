@@ -220,7 +220,7 @@ export default function Weekly() {
                       const prot = Math.round(m.proteinG || 0)
                       const carb = Math.round(m.carbsG || 0)
                       const fat  = Math.round(m.fatG || 0)
-                      const fib  = Math.round(m.fiberG || 0)
+                      const fib  = m.fiberG > 0 ? Math.round(m.fiberG) : Math.round(cal * 14 / 1000)
                       return (
                         <div key={i} style={{
                           display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 20px',

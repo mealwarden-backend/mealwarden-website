@@ -6,7 +6,6 @@ import ComingSoonModal from '@/components/ComingSoonModal'
 
 export default function Download() {
   const router = useRouter()
-  const [androidOpen, setAndroidOpen] = useState(false)
   const [cs, setCs] = useState(false)
 
   return (
@@ -232,100 +231,6 @@ export default function Download() {
                   Google Play
                 </div>
               </div>
-            </div>
-
-            {/* APK Divider */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%' }}>
-              <div style={{ flex: 1, height: 1, background: '#e5e7eb' }} />
-              <span style={{ fontSize: 12, color: '#9ca3af' }}>or</span>
-              <div style={{ flex: 1, height: 1, background: '#e5e7eb' }} />
-            </div>
-
-            {/* APK accordion */}
-            <div style={{ width: '100%', border: '1.5px solid #bbf7d0', borderRadius: 14, overflow: 'hidden' }}>
-              <button
-                onClick={() => setAndroidOpen(!androidOpen)}
-                style={{
-                  width: '100%', padding: '13px 20px',
-                  background: androidOpen ? '#f0fdf4' : '#fff',
-                  border: 'none', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center',
-                  justifyContent: 'space-between',
-                  fontFamily: 'var(--font-jakarta), Plus Jakarta Sans, sans-serif',
-                  transition: 'background 0.2s ease',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ fontSize: 18 }}>📦</span>
-                  <div style={{ textAlign: 'left' }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#052e16' }}>
-                      Download APK directly
-                    </div>
-                    <div style={{ fontSize: 11, color: '#6b7280' }}>
-                      For devices without Play Store
-                    </div>
-                  </div>
-                </div>
-                <span style={{
-                  fontSize: 12, color: '#16a34a',
-                  display: 'inline-block',
-                  transform: androidOpen ? 'rotate(180deg)' : 'rotate(0)',
-                  transition: 'transform 0.3s ease',
-                }}>
-                  ▼
-                </span>
-              </button>
-
-              {/* APK expanded */}
-              {androidOpen && (
-                <div style={{
-                  padding: '16px 20px',
-                  background: '#f0fdf4',
-                  borderTop: '1px solid #bbf7d0',
-                }}>
-                  {/* Warning */}
-                  <div style={{
-                    background: '#fffbeb', border: '1px solid #fcd34d',
-                    borderRadius: 10, padding: '10px 14px', marginBottom: 14,
-                    display: 'flex', gap: 8, alignItems: 'flex-start',
-                  }}>
-                    <span style={{ fontSize: 16, flexShrink: 0 }}>⚠️</span>
-                    <p style={{ fontSize: 12, color: '#92400e', lineHeight: 1.6, margin: 0 }}>
-                      Before installing, enable <strong>Install from unknown sources</strong> in your Android Settings → Security.
-                    </p>
-                  </div>
-
-                  {/* APK details */}
-                  <div style={{
-                    display: 'flex', justifyContent: 'space-between',
-                    marginBottom: 14, fontSize: 12, color: '#6b7280',
-                  }}>
-                    <span>📱 v1.0.0</span>
-                    <span>📦 ~28 MB</span>
-                    <span>🤖 Android 8.0+</span>
-                  </div>
-
-                  {/* APK download button */}
-                  <div
-                    onClick={() => setCs(true)}
-                    style={{
-                      display: 'flex', alignItems: 'center',
-                      justifyContent: 'center', gap: 8,
-                      width: '100%', padding: '12px',
-                      background: 'linear-gradient(135deg,#16a34a,#22c55e)',
-                      color: '#fff', borderRadius: 10, cursor: 'pointer',
-                      fontWeight: 700, fontSize: 14,
-                      fontFamily: 'var(--font-jakarta), Plus Jakarta Sans, sans-serif',
-                      boxShadow: '0 4px 16px rgba(22,163,74,0.3)',
-                      transition: 'transform 0.2s ease',
-                    }}
-                    onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-2px)')}
-                    onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)')}
-                  >
-                    ⬇️ Download APK File
-                  </div>
-                </div>
-              )}
             </div>
 
             <p style={{ fontSize: 12, color: '#9ca3af', textAlign: 'center' }}>

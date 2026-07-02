@@ -351,7 +351,7 @@ export default function Settings() {
           </div>
         </div>
 
-        <button onClick={() => { logout(); router.push('/') }} style={{ width: '100%', padding: '14px', background: '#fff', color: '#ef4444', border: '1.5px solid #fecdd3', borderRadius: 12, fontWeight: 700, fontSize: 15, cursor: 'pointer', fontFamily: FONT }}>🚪 Log out</button>
+        <button onClick={() => { logout(); router.push('/') }} style={{ width: '100%', padding: '14px', background: '#fff', color: '#ef4444', border: '1.5px solid #fecdd3', borderRadius: 12, fontWeight: 700, fontSize: 15, cursor: 'pointer', fontFamily: FONT }}>🚪 Log Out</button>
       </div>
     </div>
   )
